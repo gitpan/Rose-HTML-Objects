@@ -9,7 +9,7 @@ use Rose::HTML::Util();
 use Rose::HTML::Object;
 our @ISA = qw(Rose::HTML::Object);
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 use Rose::Object::MakeMethods::Generic
 (

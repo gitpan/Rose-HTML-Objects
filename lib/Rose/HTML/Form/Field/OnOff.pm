@@ -5,7 +5,7 @@ use strict;
 use Rose::HTML::Form::Field::Input;
 our @ISA = qw(Rose::HTML::Form::Field::Input);
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 __PACKAGE__->add_required_html_attrs(
 {

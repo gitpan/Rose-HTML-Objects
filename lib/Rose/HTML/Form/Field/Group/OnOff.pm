@@ -9,7 +9,7 @@ use Rose::HTML::Util();
 use Rose::HTML::Form::Field::Group;
 our @ISA = qw(Rose::HTML::Form::Field::Group);
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 our $Debug = undef;
 

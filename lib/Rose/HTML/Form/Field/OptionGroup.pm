@@ -11,7 +11,7 @@ use Rose::Object::MakeMethods::Generic
   boolean => 'multiple',
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 __PACKAGE__->add_required_html_attrs(
 {
@@ -202,3 +202,9 @@ label. If no value is selected, undef is returned.
 =head1 AUTHOR
 
 John C. Siracusa (siracusa@mindspring.com)
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+free software; you can redistribute it and/or modify it under the same terms
+as Perl itself.

@@ -11,7 +11,7 @@ our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 use constant FIELD_SEPARATOR => '.';
 our $FIELD_SEPARATOR = FIELD_SEPARATOR;
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -664,3 +664,9 @@ of the same in scalar context.
 =head1 AUTHOR
 
 John C. Siracusa (siracusa@mindspring.com)
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+free software; you can redistribute it and/or modify it under the same terms
+as Perl itself.

@@ -9,7 +9,7 @@ use Rose::HTML::Form::Field::Hidden;
 use Rose::HTML::Form::Field;
 our @ISA = qw(Rose::HTML::Form::Field);
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 use Rose::Object::MakeMethods::Generic
 (

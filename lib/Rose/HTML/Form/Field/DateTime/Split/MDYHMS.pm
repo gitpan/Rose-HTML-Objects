@@ -10,7 +10,7 @@ use Rose::HTML::Form::Field::Time::Split::HourMinuteSecond;
 use Rose::HTML::Form::Field::DateTime::Split;
 our @ISA = qw(Rose::HTML::Form::Field::DateTime::Split);
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 sub build_field
 {
@@ -215,3 +215,9 @@ subfields into a C<DateTime> object.
 =head1 AUTHOR
 
 John C. Siracusa (siracusa@mindspring.com)
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+free software; you can redistribute it and/or modify it under the same terms
+as Perl itself.

@@ -10,7 +10,7 @@ use Rose::HTML::Form::Field::Group;
 use Rose::HTML::Form::Field::Group::OnOff;
 our @ISA = qw(Rose::HTML::Form::Field::Group::OnOff);
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 sub _item_class       { 'Rose::HTML::Form::Field::CheckBox' }
 sub _item_name        { 'checkbox' }
@@ -332,3 +332,9 @@ Equivalent to C<html_table()>.
 =head1 AUTHOR
 
 John C. Siracusa (siracusa@mindspring.com)
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+free software; you can redistribute it and/or modify it under the same terms
+as Perl itself.

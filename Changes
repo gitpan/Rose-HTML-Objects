@@ -1,3 +1,11 @@
 0.01 (11.13.2004) - John Siracusa <siracusa@mindspring.com>
 
     * Initial release.
+
+0.011 (11.14.2004) - John Siracusa <siracusa@mindspring.com>
+
+    * Added misssing prerequisite (Rose::URI)
+    
+0.012 (11.14.2004) - John Siracusa <siracusa@mindspring.com>
+
+    * Added copyright info.  Versions 0.01 and 0.011 removed.

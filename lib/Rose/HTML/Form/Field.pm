@@ -15,7 +15,7 @@ our @ISA = qw(Rose::HTML::Object);
 use constant HTML_ERROR_SEP  => "<br>\n";
 use constant XHTML_ERROR_SEP => "<br />\n";
 
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 #our $Debug = 0;
 
@@ -1063,3 +1063,9 @@ calls C<xhtml_field()>.
 =head1 AUTHOR
 
 John C. Siracusa (siracusa@mindspring.com)
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+free software; you can redistribute it and/or modify it under the same terms
+as Perl itself.
