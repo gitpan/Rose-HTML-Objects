@@ -13,6 +13,8 @@ __PACKAGE__->add_required_html_attrs(
   name  => '',
 });
 
+our $VERSION = '0.011';
+
 sub hidden_fields      { (wantarray) ? () : [] }
 sub html_hidden_fields { (wantarray) ? () : [] }
 

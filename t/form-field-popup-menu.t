@@ -18,7 +18,7 @@ $field->options(apple  => 'Apple',
                 orange => 'Orange',
                 grape  => 'Grape');
 
-is(join(',', $field->labels), 'apple,Apple,orange,Orange,grape,Grape', 'labels()');
+is(join(',', sort $field->labels), 'Apple,Grape,Orange,apple,grape,orange', 'labels()');
 
 is($field->html_field, 
   qq(<select name="fruits" size="1">\n) .

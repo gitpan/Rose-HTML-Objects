@@ -9,3 +9,7 @@
 0.012 (11.14.2004) - John Siracusa <siracusa@mindspring.com>
 
     * Added copyright info.  Versions 0.01 and 0.011 removed.
+
+0.013 (12.07.2004) - John Siracusa <siracusa@mindspring.com>
+
+    * Fixed some tests that relied on keys()/values() order.

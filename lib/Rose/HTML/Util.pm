@@ -36,6 +36,8 @@ else
   *escape_uri_component = \&URI::Escape::uri_escape;
 }
 
+our $VERSION = '0.011';
+
 *encode_entities = \&HTML::Entities::encode;
 
 sub escape_uri
