@@ -2,13 +2,21 @@
 
 use strict;
 
-use Test::More tests => 43;
+use Test::More tests => 45;
 
 BEGIN 
 {
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MonthDayYear');
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MDYHMS');
+  use_ok('DateTime');
+  use_ok('Rose::DateTime::Util');
 }
+
+# Test to see if we can creat local DateTimes
+eval { DateTime->now(time_zone => 'local') };
+
+# Use UTC if we can't
+Rose::DateTime::Util->time_zone('UTC')  if($@);
 
 #
 # Rose::HTML::Form::Field::DateTime::Split::MonthDayYear

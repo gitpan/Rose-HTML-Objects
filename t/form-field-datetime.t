@@ -10,6 +10,12 @@ BEGIN
   use_ok('Rose::HTML::Form::Field::DateTime');
 }
 
+# Test to see if we can creat local DateTimes
+eval { DateTime->now(time_zone => 'local') };
+
+# Use UTC if we can't
+Rose::DateTime::Util->time_zone('UTC')  if($@);
+
 my $field = Rose::HTML::Form::Field::DateTime->new(
   label       => 'Date', 
   description => 'Some Date',
