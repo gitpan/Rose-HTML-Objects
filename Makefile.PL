@@ -13,4 +13,5 @@ WriteMakefile('NAME'         => 'Rose::HTML::Objects',
                 'Scalar::Util'   => 0,
                 'Rose::Object'   => 0,
                 'Rose::DateTime' => 0,
+                'Rose::URI'      => 0,
               });

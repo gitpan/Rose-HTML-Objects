@@ -3,7 +3,7 @@ package Rose::HTML::Objects;
 use strict;
 
 # The sole purpose of this module is to provide a version number
-our $VERSION = '0.01';
+our $VERSION = '0.011';
 
 1;
 
@@ -11,7 +11,7 @@ __END__
 
 =head1 NAME
 
-Rose::HTML::Objects - Object-oriented interfaces for HTML
+Rose::HTML::Objects - Object-oriented interfaces for HTML.
 
 =head1 SYNOPSIS
 
