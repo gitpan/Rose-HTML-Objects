@@ -19,3 +19,8 @@
     * Added code to tests to drop back to UTC time zone if the local time
       zone cannot be determined (e.g., on Win32)
     * Added warnings for ancient versions of DateTime.
+
+0.0132 (04.21.2005) - John Siracusa <siracusa@mindspring.com>
+
+    * Fixed a bug that caused a misleading error message when trying to
+      select multiple items in a pop-up menu.
