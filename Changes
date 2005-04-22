@@ -24,3 +24,9 @@
 
     * Fixed a bug that caused a misleading error message when trying to
       select multiple items in a pop-up menu.
+
+0.014 (04.22.2005) - John Siracusa <siracusa@mindspring.com>
+
+    * Added functionality to the value_label() method of on/off field 
+      groups and restored the original meaning of the label() method 
+      for those fields.

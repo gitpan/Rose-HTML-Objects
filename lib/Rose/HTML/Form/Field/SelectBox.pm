@@ -23,7 +23,7 @@ __PACKAGE__->add_valid_html_attrs
   'onchange',    # %Script;       #IMPLIED  -- the element value was changed --
 );
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 sub multiple { shift->html_attr('multiple', @_) }
 
@@ -44,7 +44,7 @@ in an HTML form.
                     orange => 'Orange',
                     grape  => 'Grape');
 
-    print $field->label('apple'); # 'Apple'
+    print $field->value_label('apple'); # 'Apple'
 
     $field->input_value('orange');
     print $field->internal_value; # 'orange'
@@ -152,12 +152,6 @@ Add multiple values to the list of selected values.
 =item B<has_value VALUE>
 
 Returns true if VALUE is selected in the select box, false otherwise.
-
-=item B<label VALUE [, LABEL]>
-
-Get or set the label for a single value.  The label for VALUE is returned.
-If the value exists, but has no label, then the value itself is returned.
-If the value does not exist, then undef is returned.
 
 =item B<labels [LABELS]>
 

@@ -218,7 +218,31 @@ sub value_labels
   return wantarray ? @labels : \@labels;
 }
 
-sub value_label { shift->value_labels->[0] }
+sub value_label 
+{
+  my($self) = shift;
+
+  unless(@_)
+  {
+    return $self->value_labels->[0];
+  }
+
+  my $value = shift;
+
+  # Dumb linear search for now
+  foreach my $item ($self->items)
+  {
+    if($item->html_attr('value') eq $value)
+    {
+      return $item-label(@_)  if(@_);
+      return ($item->label) ? $item->label : $value;
+    }
+  }
+
+  return undef;
+}
+
+#sub value_label { shift->value_labels->[0] }
 
 sub value  { shift->input_value(@_) }
 sub values { shift->input_value(@_) }

@@ -26,7 +26,7 @@ is($field->html_field,
   qq(<input name="fruits" type="radio" value="grape"> <label>Grape</label>),
   'html_field() 1');
 
-is($field->label('apple'), 'Apple', 'label()');
+is($field->value_label('apple'), 'Apple', 'value_label()');
 
 $field->radio_button('apple')->label('<b>Apple</b>');
 $field->escape_html(0);

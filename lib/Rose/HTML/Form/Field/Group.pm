@@ -9,7 +9,7 @@ use Rose::HTML::Util();
 use Rose::HTML::Form::Field;
 our @ISA = qw(Rose::HTML::Form::Field);
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 our $Debug = undef;
 
@@ -230,23 +230,6 @@ sub labels
   }
 
   return $want ? %labels : \%labels;
-}
-
-sub label
-{
-  my($self, $value) = (shift, shift); 
-
-  # Dumb linear search for now
-  foreach my $item ($self->items)
-  {
-    if($item->html_attr('value') eq $value)
-    {
-      return $item-label(@_)  if(@_);
-      return ($item->label) ? $item->label : $value;
-    }
-  }
-
-  return undef;
 }
 
 sub html_field

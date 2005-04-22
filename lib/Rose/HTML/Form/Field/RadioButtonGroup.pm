@@ -64,7 +64,7 @@ Rose::HTML::Form::Field::RadioButtonGroup - A group of radio buttons in an HTML 
                           orange => 'Orange',
                           grape  => 'Grape');
 
-    print $field->label('apple'); # 'Apple'
+    print $field->value_label('apple'); # 'Apple'
 
     $field->input_value('orange');
     print $field->internal_value; # 'orange'
@@ -214,13 +214,6 @@ value for those attributes.  Example:
     # <tr>
     # <td>...
 
-=item B<label VALUE [, LABEL]>
-
-Get or set the label for the radio button whose value is VALUE.  The label for
-that radio button is returned. If the radio button exists, but has no label,
-then the value itself is returned. If the radio button does not exist, then
-undef is returned.
-
 =item B<labels [LABELS]>
 
 Get or set the labels for all radio buttons.  If LABELS is a reference to a
@@ -281,10 +274,16 @@ C<html_table()> and C<xhtml_table()> methods.
 
 Simply calls C<input_value()>, passing all arguments.
 
-=item B<value_label>
+=item B<value_label [VALUE [, LABEL]>
 
-Returns the label of the selected radio button, or the value itself if it has
-no label. If no radio button is selected, undef is returned.
+If no arguments are passed, it returns the label of the selected radio
+button, or the value itself if it has no label.  If no radio button is
+selected, undef is returned.
+
+With arguments, it will get or set the label for the radio button whose
+value is VALUE.  The label for that radio button is returned.  If the radio
+button exists, but has no label, then the value itself is returned.  If the
+radio button does not exist, then undef is returned.
 
 =item B<xhtml>
 

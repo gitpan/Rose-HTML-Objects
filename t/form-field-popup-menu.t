@@ -28,7 +28,7 @@ is($field->html_field,
   qq(</select>),
   'html_field() 1');
 
-is($field->label('apple'), 'Apple', 'label()');
+is($field->value_label('apple'), 'Apple', 'label()');
 
 $field->option('apple')->label('<b>Apple</b>');
 $field->escape_html(0);

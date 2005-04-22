@@ -10,7 +10,7 @@ use Rose::HTML::Form::Field::Group;
 use Rose::HTML::Form::Field::Group::OnOff;
 our @ISA = qw(Rose::HTML::Form::Field::Group::OnOff);
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 sub _item_class       { 'Rose::HTML::Form::Field::CheckBox' }
 sub _item_name        { 'checkbox' }
@@ -64,7 +64,7 @@ Rose::HTML::Form::Field::CheckBoxGroup - A group of checkboxes in an HTML form.
                        orange => 'Orange',
                        grape  => 'Grape');
 
-    print $field->label('apple'); # 'Apple'
+    print $field->value_label('apple'); # 'Apple'
 
     $field->input_value('orange');
     print $field->internal_value; # 'orange'
@@ -299,11 +299,17 @@ Simply calls C<input_value()>, passing all arguments.
 
 Simply calls C<input_value()>, passing all arguments.
 
-=item B<value_label>
+=item B<value_label [VALUE [, LABEL]]>
 
-Returns the label of the first selected checkbox (according to the order that
-they are returned by C<internal_value()>), or the value itself if it has no
-label. If no checkbox is selected, undef is returned.
+If no arguments are passed, it returns the label of the first selected
+checkbox (according to the order that they are returned by
+C<internal_value()>), or the value itself if it has no label. If no
+checkbox is selected, undef is returned.
+
+With arguments, it will get or set the label for the checkbox whose value is
+VALUE.  The label for that checkbox is returned. If the checkbox exists, but
+has no label, then the value itself is returned. If the checkbox does not
+exist, then undef is returned.
 
 =item B<value_labels>
 

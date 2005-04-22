@@ -29,7 +29,7 @@ in an HTML form.
                     orange => 'Orange',
                     grape  => 'Grape');
 
-    print $field->label('apple'); # 'Apple'
+    print $field->value_label('apple'); # 'Apple'
 
     $field->input_value('orange');
 
@@ -119,12 +119,6 @@ list of options.
 
 Returns true if VALUE is selected in the pop-up menu, false otherwise.
 
-=item B<label VALUE [, LABEL]>
-
-Get or set the label for a single value.  The label for VALUE is returned.
-If the value exists, but has no label, then the value itself is returned.
-If the value does not exist, then undef is returned.
-
 =item B<labels [LABELS]>
 
 Get or set the labels for all values.  If LABELS is a reference to a hash or a
@@ -174,11 +168,16 @@ objects used in the field. Modifying them will modify the field itself.
 
 Simply calls C<input_value()>, passing all arguments.
 
-=item B<value_label>
+=item B<value_label [VALUE [, LABEL]]>
 
-Returns the label of the first selected value (according to the order that
-they are returned by C<internal_value()>), or the value itself if it has no
-label. If no value is selected, undef is returned.
+If no arguments are passed, it returns the label of the selected option, or
+the value itself if it has no label. If no option is selected, undef is
+returned.
+
+With arguments, it will get or set the label for the option whose value is
+VALUE.  The label for that option is returned. If the option exists, but
+has no label, then the value itself is returned. If the option does not
+exist, then undef is returned.
 
 =back
 
