@@ -15,7 +15,7 @@ our @ISA = qw(Rose::HTML::Object);
 use constant HTML_ERROR_SEP  => "<br>\n";
 use constant XHTML_ERROR_SEP => "<br />\n";
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 #our $Debug = 0;
 
@@ -457,14 +457,14 @@ sub html_label
 {
   my($self) = shift;
   return ''  unless(length $self->label);
-  return $self->label_object(@_)->html_tag;
+  return $self->label_object(($self->required ? (class => 'required') : ()), @_)->html_tag;
 }
 
 sub xhtml_label
 {
   my($self) = shift;
   return ''  unless(length $self->label);
-  return $self->label_object(@_)->xhtml_tag;
+  return $self->label_object(($self->required ? (class => 'required') : ()), @_)->xhtml_tag;
 }
 
 sub validate
@@ -859,6 +859,11 @@ Returns the HTML serialization of the label object, or the empty
 string if the field's C<label> is undefined or zero in length.
 Any ARGS are passed to the call to C<label_object()>.
 
+If C<required()>is true for this field, then the name/value pair "class =>
+'required'" is passed to the call to C<label_object()> I<before> any
+arguments that you pass.  This allows you to override the "class" value
+with one of your own.
+
 =item B<html_prefix [STRING]>
 
 Get or set an HTML prefix that may be displayed before the HTML field.
@@ -1052,6 +1057,11 @@ joined by newlines.
 Returns the XHTML serialization of the label object, or the empty
 string if the field's C<label> is undefined or zero in length.
 Any ARGS are passed to the call to C<label_object()>.
+
+If C<required()>is true for this field, then the name/value pair "class =>
+'required'" is passed to the call to C<label_object()> I<before> any
+arguments that you pass.  This allows you to override the "class" value
+with one of your own.
 
 =item B<xhtml_tag>
 

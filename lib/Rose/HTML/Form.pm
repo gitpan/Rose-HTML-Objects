@@ -12,7 +12,7 @@ use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -56,6 +56,7 @@ use Rose::Object::MakeMethods::Generic
   boolean => 
   [
     'coalesce_query_string_params' => { default => 1 },
+    'build_on_init'                => { default => 1 },
   ],
 );
 
@@ -85,7 +86,7 @@ sub init
 
   $self->SUPER::init(@_);
 
-  $self->build_form();
+  $self->build_form()  if($self->build_on_init);
 }
 
 sub html_element  { 'form' }
@@ -842,16 +843,26 @@ Add VALUE to the parameter named NAME.  Example:
 
     print join(',', $form->param('a')); # 1,2
 
+=item B<build_on_init [BOOL]>
+
+Get or set a boolean flag that indicates whether or not C<build_form()> should
+be called from within the C<init()> method.  See C<build_form()> for more
+information.
+
 =item B<build_form>
 
 This method is a no-op in this class.  It is meant to be overridden by
-subclasses.  It is called at the end of the C<init()> method. (Remember that
-this class inherits from C<Rose::HTML::Object>, which inherits from
-C<Rose::Object>, which defines the C<init()> method, which is called from the
-constructor.  See the C<Rose::Object> documentation for more information.)
+subclasses.  It is called at the end of the C<init()> method if
+C<build_on_init()> is true. (Remember that this class inherits from
+C<Rose::HTML::Object>, which inherits from C<Rose::Object>, which defines the
+C<init()> method, which is called from the constructor.  See the
+C<Rose::Object> documentation for more information.)
+
+If C<build_on_init()> is false, then you must remember to call C<build_form()>
+manually.
 
 Subclasses should populate the field list in their overridden versions of
-C<build_field()>.  Example:
+C<build_form()>.  Example:
 
   sub build_form 
   {

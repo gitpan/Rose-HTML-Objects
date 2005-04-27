@@ -30,3 +30,13 @@
     * Added functionality to the value_label() method of on/off field 
       groups and restored the original meaning of the label() method 
       for those fields.
+
+0.0141 (04.22.2005) - John Siracusa <siracusa@mindspring.com>
+
+    * Added class="required" to the label tag of required fields.
+
+0.0142 (04.27.2005) - John Siracusa <siracusa@mindspring.com>
+
+    * Added build_on_init() method to form objects.
+
+    

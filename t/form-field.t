@@ -109,12 +109,12 @@ is($field->xhtml, qq(< /><br />\n<span class="error">Name is a required field</s
 
 $field->label('Name> ');
 
-is($field->html_label, '<label>Name&gt; </label>', 'html_label() 1');
-is($field->xhtml_label, '<label>Name&gt; </label>', 'xhtml_label() 1');
+is($field->html_label, '<label class="required">Name&gt; </label>', 'html_label() 1');
+is($field->xhtml_label, '<label class="required">Name&gt; </label>', 'xhtml_label() 1');
 $field->escape_html(0);
 
-is($field->html_label, '<label>Name> </label>', 'html_label() 2');
-is($field->xhtml_label, '<label>Name> </label>', 'xhtml_label() 2');
+is($field->html_label, '<label class="required">Name> </label>', 'html_label() 2');
+is($field->xhtml_label, '<label class="required">Name> </label>', 'xhtml_label() 2');
 
 $field->validator(sub { 0 });
 
@@ -144,12 +144,12 @@ $field->id('bar');
 is($field->id, 'bar', 'id()');
 
 $field->escape_html(1);
-is($field->html_label, '<label for="bar">Name&gt; </label>', 'html_label() 3');
-is($field->xhtml_label, '<label for="bar">Name&gt; </label>', 'xhtml_label() 3');
+is($field->html_label, '<label class="required" for="bar">Name&gt; </label>', 'html_label() 3');
+is($field->xhtml_label, '<label class="required" for="bar">Name&gt; </label>', 'xhtml_label() 3');
 $field->escape_html(0);
 
-is($field->html_label, '<label for="bar">Name> </label>', 'html_label() 4');
-is($field->xhtml_label, '<label for="bar">Name> </label>', 'xhtml_label() 5');
+is($field->html_label, '<label class="required" for="bar">Name> </label>', 'html_label() 4');
+is($field->xhtml_label, '<label class="required" for="bar">Name> </label>', 'xhtml_label() 5');
 
 $field->style('baz');
 is($field->style, 'baz', 'style()');

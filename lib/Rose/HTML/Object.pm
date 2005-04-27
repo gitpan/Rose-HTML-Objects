@@ -556,10 +556,11 @@ sub AUTOLOAD
     goto &$AUTOLOAD;
   }
 
-  croak qq(Can't locate object method "$name" via package "$class" - ) .
-        ($class->html_attr_is_valid($name) ? 
-        "did not auto-create method because $class->autoload_html_attr_methods is not set" :
-        "no such method, and none auto-created because it is not a valid HTML attribute for this class");
+  confess
+    qq(Can't locate object method "$name" via package "$class" - ) .
+    ($class->html_attr_is_valid($name) ? 
+    "did not auto-create method because $class->autoload_html_attr_methods is not set" :
+    "no such method, and none auto-created because it is not a valid HTML attribute for this class");
 }
 
 1;

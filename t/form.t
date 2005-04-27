@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 77;
+use Test::More tests => 79;
 
 BEGIN 
 {
@@ -440,6 +440,15 @@ $form->action('/foo/bar');
 $form->uri_base('http://www.foo.com');
 $form->delete_params();
 is($form->self_uri, 'http://www.foo.com/foo/bar', 'self_uri()');
+
+$form = MyForm->new(build_on_init => 0);
+
+is(join('', $form->fields), '', 'build_on_init() 1');
+
+$form->build_form;
+@fields = $form->fields;
+
+is(scalar @fields, 4,'build_on_init() 2');
 
 BEGIN
 {
