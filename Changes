@@ -39,4 +39,8 @@
 
     * Added build_on_init() method to form objects.
 
-    
+0.0143 (05.02.2005) - John Siracusa <siracusa@mindspring.com>
+
+    * Added scalar context to the input_value() call in init_with_object(),
+      and to the deflate_value() call in output_value().
+    * Fixed mistakes in TextArea documentation.

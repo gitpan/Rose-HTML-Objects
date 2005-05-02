@@ -5,7 +5,7 @@ use strict;
 use Rose::HTML::Form::Field::WithContents;
 our @ISA = qw(Rose::HTML::Form::Field::WithContents);
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 __PACKAGE__->add_valid_html_attrs
 (
@@ -56,12 +56,12 @@ text field in an HTML form.
 
     $field =
       Rose::HTML::Form::Field::TextArea->new(
-        label     => 'Your Age', 
-        name      => 'age',
-        size      => 2,
-        maxlength => 3);
+        label => 'Comments', 
+        name  => 'comments',
+        rows  => 2,
+        cols  => 50);
 
-    $age = $field->internal_value;
+    $comments = $field->internal_value;
 
     print $field->html;
 

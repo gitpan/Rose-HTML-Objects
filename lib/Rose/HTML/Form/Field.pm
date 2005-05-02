@@ -15,7 +15,7 @@ our @ISA = qw(Rose::HTML::Object);
 use constant HTML_ERROR_SEP  => "<br>\n";
 use constant XHTML_ERROR_SEP => "<br />\n";
 
-our $VERSION = '0.012';
+our $VERSION = '0.013';
 
 #our $Debug = 0;
 
@@ -232,7 +232,7 @@ sub output_value
 
   return $self->{'output_value'}  if(defined $self->{'output_value'});
 
-  my $value = $self->deflate_value($self->internal_value);
+  my $value = $self->deflate_value(scalar $self->internal_value);
 
   if(my $output_filter = $self->output_filter)
   {

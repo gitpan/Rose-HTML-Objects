@@ -12,7 +12,7 @@ use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.012';
+our $VERSION = '0.0121';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -548,7 +548,7 @@ sub init_with_object
     if($object->can($name))
     {
       #$Debug && warn "field($name) = $object->$name = ", $object->$name();
-      $field->input_value($object->$name());
+      $field->input_value(scalar $object->$name());
     }
   }
 }
@@ -1120,8 +1120,8 @@ Examples:
 
 Initialize the form based on OBJECT.  First, the form is C<clear()>ed.  Next,
 for each field C<name()>, if the object has a method with the same name, then
-the return value of that method is passed as the C<input_value()> for the form
-field of the same name.
+the return value of that method (called in scalar context) is passed as the
+C<input_value()> for the form field of the same name.
 
 Heck, at this point, the actual code for the C<init_with_object()> method is
 shorter and more clear than my description.  Basically, it does this:
@@ -1138,7 +1138,7 @@ shorter and more clear than my description.  Basically, it does this:
 
         if($object->can($name))
         {
-          $field->input_value($object->$name());
+          $field->input_value(scalar $object->$name());
         }
       }
     }
