@@ -8,11 +8,15 @@ use Rose::DateTime::Parser;
 use Rose::HTML::Form::Field::Text;
 our @ISA = qw(Rose::HTML::Form::Field::Text);
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 use Rose::Object::MakeMethods::Generic
 (
-  'scalar --get_set_init' => 'date_parser',
+  'scalar --get_set_init' => 
+  [
+    'date_parser',
+    'output_format',
+  ]
 );
 
 __PACKAGE__->add_required_html_attr(
@@ -39,11 +43,13 @@ sub inflate_value
   return $self->date_parser->parse_datetime($date);
 }
 
+sub init_output_format { '%Y-%m-%d %I:%M:%S %p' }
+
 sub deflate_value
 {
   my($self, $date) = @_;
   return $self->input_value_filtered  unless($date);
-  return Rose::DateTime::Util::format_date($date, '%Y-%m-%d %I:%M:%S %p');
+  return Rose::DateTime::Util::format_date($date, $self->output_format);
 }
 
 sub validate
@@ -121,7 +127,7 @@ C<DateTime> objects.
 =head1 DESCRIPTION
 
 C<Rose::HTML::Form::Field::DateTime> is a subclass of
-C<Rose::HTML::Form::Field::Text> that allows only valid dates as input, which
+L<Rose::HTML::Form::Field::Text> that allows only valid dates as input, which
 it then coerces to C<DateTime> objects. It overrides the C<validate()>,
 C<inflate_value()>, and C<deflate_value()> methods of its parent class.
 
@@ -140,7 +146,11 @@ object, or undef if parsing fails.
 If the parser object has an C<error()> method, it will be called to set the
 error message after a failed parsing attempt.
 
-The parser object defaults to C<Rose::DateTime::Parser-E<gt>new()>.
+The parser object defaults to L<Rose::DateTime::Parser-E<gt>new()|Rose::DateTime::Parser/new>.
+
+=item B<output_format [FORMAT]>
+
+Get or set the format string passed to L<Rose::DateTime::Util>'s L<format_date()|Rose::DateTime::Util/format_date> function in order to generate the field's output value.  Defaults to "%Y-%m-%d %I:%M:%S %p"
 
 =item B<time_zone [TZ]>
 
@@ -155,24 +165,28 @@ Other examples of custom fields:
 
 =over 4
 
-=item C<Rose::HTML::Form::Field::Email>
+=item L<Rose::HTML::Form::Field::Email>
 
 A text field that only accepts valid email addresses.
 
-=item C<Rose::HTML::Form::Field::Time>
+=item L<Rose::HTML::Form::Field::Time>
 
 Uses inflate/deflate to coerce input into a fixed format.
 
-=item C<Rose::HTML::Form::Field::PhoneNumber::US::Split>
+=item L<Rose::HTML::Form::Field::DateTime::Range>
+
+A compound field whose internal value consists of more than one object.
+
+=item L<Rose::HTML::Form::Field::PhoneNumber::US::Split>
 
 A simple compound field that coalesces multiple subfields into a single value.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
 
 A compound field that uses inflate/deflate convert input from multiple
 subfields into a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
 
 A compound field that includes other compound fields and uses inflate/deflate 
 convert input from multiple subfields into a C<DateTime> object.
@@ -185,6 +199,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

@@ -44,3 +44,11 @@
     * Added scalar context to the input_value() call in init_with_object(),
       and to the deflate_value() call in output_value().
     * Fixed mistakes in TextArea documentation.
+
+0.02 (06.27.2005) - John Siracusa <siracusa@mindspring.com>
+
+    * Added support for multi-valued internal values.
+    * Added support for fields with partial values (e.g., a compound time 
+      field with just an hour and an AM/PM specifier filled out.)
+    * Shored up support for deeply-nested compound fields.
+    * Added hour, minute, second, start date, end date, and date range fields.

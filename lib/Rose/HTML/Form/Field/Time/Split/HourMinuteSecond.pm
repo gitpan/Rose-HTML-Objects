@@ -2,13 +2,15 @@ package Rose::HTML::Form::Field::Time::Split::HourMinuteSecond;
 
 use strict;
 
-use Rose::HTML::Form::Field::Text;
+use Rose::HTML::Form::Field::Time::Hours;
+use Rose::HTML::Form::Field::Time::Minutes;
+use Rose::HTML::Form::Field::Time::Seconds;
 use Rose::HTML::Form::Field::PopUpMenu;
 
 use Rose::HTML::Form::Field::Time::Split;
 our @ISA = qw(Rose::HTML::Form::Field::Time::Split);
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 sub build_field
 {
@@ -17,24 +19,32 @@ sub build_field
   my %fields;
 
   $fields{'hour'} = 
-    Rose::HTML::Form::Field::Text->new(size      => 2,
-                                       maxlength => 2,
-                                       class     => 'hour');
+    Rose::HTML::Form::Field::Time::Hours->new(size      => 2,
+                                              maxlength => 2,
+                                              class     => 'hour');
 
   $fields{'minute'} = 
-    Rose::HTML::Form::Field::Text->new(size      => 2,
-                                       maxlength => 2,
-                                       class     => 'minute');
+    Rose::HTML::Form::Field::Time::Minutes->new(size      => 2,
+                                                maxlength => 2,
+                                                class     => 'minute');
   $fields{'second'} = 
-    Rose::HTML::Form::Field::Text->new(size      => 2,
-                                       maxlength => 2,
-                                       class     => 'second');
+    Rose::HTML::Form::Field::Time::Seconds->new(size      => 2,
+                                                maxlength => 2,
+                                                class     => 'second');
 
   $fields{'ampm'} = 
     Rose::HTML::Form::Field::PopUpMenu->new(options => [ '', 'AM', 'PM' ],
-                                            class   => 'ampm');
+                                            class   => 'ampm',
+                                            default => '');
 
   $self->add_fields(%fields);
+}
+
+sub is_full
+{
+  no warnings;
+  return (length $_[0]->field('hour')->internal_value && 
+          length $_[0]->field('ampm')->internal_value) ? 1 : 0;
 }
 
 sub decompose_value
@@ -73,8 +83,8 @@ sub coalesce_value
   return 
     sprintf("%02d:%02d:%02d %s", 
       $self->field('hour')->internal_value,
-      $self->field('minute')->internal_value,
-      $self->field('second')->internal_value,
+      $self->field('minute')->internal_value || 0,
+      $self->field('second')->internal_value || 0,
       $self->field('ampm')->internal_value);
 }
 
@@ -145,12 +155,12 @@ C<Rose::HTML::Form::Field::Time::Split::HourMinuteSecond> is a compound field
 for times with separate text fields for hour, minute, and second, and a pop-up
 menu for selecting AM or PM.
 
-This class inherits (indirectly) from both C<Rose::HTML::Form::Field::Time>
-and C<Rose::HTML::Form::Field::Compound>.  This doesn't quite work out as
+This class inherits (indirectly) from both L<Rose::HTML::Form::Field::Time>
+and L<Rose::HTML::Form::Field::Compound>.  This doesn't quite work out as
 expected without a bit of tweaking.  We'd like C<inflate_value()> and
-C<validate()> methods to be inherited from C<Rose::HTML::Form::Field::Time>,
+C<validate()> methods to be inherited from L<Rose::HTML::Form::Field::Time>,
 but everything else to be inherited from
-C<Rose::HTML::Form::Field::Compound>.
+L<Rose::HTML::Form::Field::Compound>.
 
 To solve this problem, there's an intermediate class that imports the correct
 set of methods.  This class then inherits from the intermediate class.  To
@@ -161,13 +171,15 @@ also demonstrates the problems that can crop up when multiple inheritance is
 combined with a strong aversion to code duplication.
 
 A simpler example of a compound field can be found in
-C<Rose::HTML::Form::Field::PhoneNumber::US::Split>.  It too uses multiple
+L<Rose::HTML::Form::Field::PhoneNumber::US::Split>.  It too uses multiple
 inheritance, but its family tree is more conveniently built, saving it from
 selective method importing shenanigans.
 
+This field also overrides the C<is_full()|Rose::HTML::Form::Field::Compound/is_full> method.  A valid time can be extracted from the field as long as both the hour and AM/PM subfields are not empty.  All other empty fields will be treated as if they contained zeros (00).
+
 It is important that this class (indirectly) inherits from
-C<Rose::HTML::Form::Field::Compound>. See the
-C<Rose::HTML::Form::Field::Compound> documentation for more information.
+L<Rose::HTML::Form::Field::Compound>. See the
+L<Rose::HTML::Form::Field::Compound> documentation for more information.
 
 =head1 AUTHOR
 
@@ -175,6 +187,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

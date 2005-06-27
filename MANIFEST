@@ -6,9 +6,12 @@ lib/Rose/HTML/Form/Field/CheckBoxGroup.pm
 lib/Rose/HTML/Form/Field/Collection.pm
 lib/Rose/HTML/Form/Field/Compound.pm
 lib/Rose/HTML/Form/Field/DateTime.pm
+lib/Rose/HTML/Form/Field/DateTime/EndDate.pm
+lib/Rose/HTML/Form/Field/DateTime/Range.pm
 lib/Rose/HTML/Form/Field/DateTime/Split.pm
 lib/Rose/HTML/Form/Field/DateTime/Split/MDYHMS.pm
 lib/Rose/HTML/Form/Field/DateTime/Split/MonthDayYear.pm
+lib/Rose/HTML/Form/Field/DateTime/StartDate.pm
 lib/Rose/HTML/Form/Field/Email.pm
 lib/Rose/HTML/Form/Field/File.pm
 lib/Rose/HTML/Form/Field/Group.pm
@@ -33,6 +36,9 @@ lib/Rose/HTML/Form/Field/Submit.pm
 lib/Rose/HTML/Form/Field/Text.pm
 lib/Rose/HTML/Form/Field/TextArea.pm
 lib/Rose/HTML/Form/Field/Time.pm
+lib/Rose/HTML/Form/Field/Time/Hours.pm
+lib/Rose/HTML/Form/Field/Time/Minutes.pm
+lib/Rose/HTML/Form/Field/Time/Seconds.pm
 lib/Rose/HTML/Form/Field/Time/Split.pm
 lib/Rose/HTML/Form/Field/Time/Split/HourMinuteSecond.pm
 lib/Rose/HTML/Form/Field/WithContents.pm
@@ -44,6 +50,7 @@ lib/Rose/HTML/Objects.pm
 lib/Rose/HTML/Util.pm
 Makefile.PL
 MANIFEST
+META.yml			Module meta-data (added by MakeMaker)
 t/form-field-checkbox-group.t
 t/form-field-checkbox.t
 t/form-field-compound.t
@@ -73,4 +80,3 @@ t/label.t
 t/logo.png
 t/object-withcontents.t
 t/object.t
-META.yml                                 Module meta-data (added by MakeMaker)

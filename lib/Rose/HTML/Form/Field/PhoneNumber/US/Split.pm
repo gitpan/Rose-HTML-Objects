@@ -143,21 +143,21 @@ numbers with separate fields for area code, exchange, and number.
 C<Rose::HTML::Form::Field::PhoneNumber::US::Split> is a compound field that
 contains three separate text fields for US phone numbers: one each for area
 code, exchange, and number.  It inherits from both
-C<Rose::HTML::Form::Field::PhoneNumber::US> and
-C<Rose::HTML::Form::Field::Compound>.  It overrides the following methods:
+L<Rose::HTML::Form::Field::PhoneNumber::US> and
+L<Rose::HTML::Form::Field::Compound>.  It overrides the following methods:
 C<build_field()>, C<coalesce_value()>, C<decompose_value()>, C<html_field()>,
 and C<xhtml_field()>.
 
 This is a good example of a compound field that combines separate fields into
 a single value through simple concatenation (plus a separator character). By
-inheriting from C<Rose::HTML::Form::Field::PhoneNumber::US>, it gets the
+inheriting from L<Rose::HTML::Form::Field::PhoneNumber::US>, it gets the
 validation and inflate/deflate features "for free", leaving it to concentrate
 on the coalesce/decompose features and the building and printing of the
 separate fields that make up the compound field.
 
 It is important that this class inherits from
-C<Rose::HTML::Form::Field::Compound>. See the
-C<Rose::HTML::Form::Field::Compound> documentation for more information.
+L<Rose::HTML::Form::Field::Compound>. See the
+L<Rose::HTML::Form::Field::Compound> documentation for more information.
 
 =head1 SEE ALSO
 
@@ -165,24 +165,28 @@ Other examples of custom fields:
 
 =over 4
 
-=item C<Rose::HTML::Form::Field::Email>
+=item L<Rose::HTML::Form::Field::Email>
 
 A text field that only accepts valid email addresses.
 
-=item C<Rose::HTML::Form::Field::Time>
+=item L<Rose::HTML::Form::Field::Time>
 
 Uses inflate/deflate to coerce input into a fixed format.
 
-=item C<Rose::HTML::Form::Field::DateTime>
+=item L<Rose::HTML::Form::Field::DateTime>
 
 Uses inflate/deflate to convert input to a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
+=item L<Rose::HTML::Form::Field::DateTime::Range>
+
+A compound field whose internal value consists of more than one object.
+
+=item L<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
 
 A compound field that uses inflate/deflate convert input from multiple
 subfields into a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
 
 A compound field that includes other compound fields and uses inflate/deflate 
 convert input from multiple subfields into a C<DateTime> object.
@@ -195,6 +199,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

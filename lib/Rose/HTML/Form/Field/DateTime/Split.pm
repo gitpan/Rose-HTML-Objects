@@ -15,4 +15,12 @@ Rose::HTML::Form::Field::DateTime->import_methods
   'validate',
 );
 
+# sub internal_value
+# {
+#   my $value = shift->SUPER::internal_value(@_);
+# no warnings;
+#   print STDERR "TIME SPLIT IV = $value = ", ref($value), "\n";
+#   return UNIVERSAL::isa($value, 'DateTime') ? $value->strftime('%I:%M:%S %p') : $value;
+# }
+
 1;

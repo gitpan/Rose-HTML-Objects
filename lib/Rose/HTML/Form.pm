@@ -114,6 +114,13 @@ sub validate_field_html_attrs
   return $self->{'validate_field_html_attrs'};
 }
 
+# Override inherited, non-public methods with fast-returning
+# "don't care" versions.
+sub _is_full  { 0 }
+sub _set_input_value { }
+sub is_full  { 0 }
+sub is_empty { 0 }
+
 sub delete_params { shift->{'params'} = {} }
 
 sub params
@@ -686,8 +693,8 @@ building large web applications with forms that may appear in many different
 places.  Similar forms can inherit from a common subclass.
 
 This class inherits from, and follows the conventions of,
-C<Rose::HTML::Object>. Inherited methods that are not overridden will not be
-documented a second time here.  See the C<Rose::HTML::Object> documentation
+L<Rose::HTML::Object>. Inherited methods that are not overridden will not be
+documented a second time here.  See the L<Rose::HTML::Object> documentation
 for more information.
 
 =head1 OVERVIEW
@@ -721,7 +728,7 @@ date) may be "addressed" by hash arguments using both top-level names (e.g.,
 "birthday.year").  If the top-level name exists in the hash, then subfield
 names are ignored.
 
-(See C<Rose::HTML::Form::Field::Compound> for more information on compound
+(See L<Rose::HTML::Form::Field::Compound> for more information on compound
 fields.)
 
 Each form has a list of field objects.  Each field object is stored under a
@@ -797,12 +804,12 @@ Convenience alias for C<add_fields()>.
 
 Add the fields specified by ARGS to the list of fields contained in this form.
 
-If an argument is "isa" C<Rose::HTML::Form::Field>, then it is added to the
+If an argument is "isa" L<Rose::HTML::Form::Field>, then it is added to the
 list of fields, stored under the name returned by the field's C<name()> method.
 
 If an argument is anything else, it is used as the field name, and the next
 argument is used as the field object to store under that name.  If the next
-argument is not an object derived from C<Rose::HTML::Form::Field>, then a
+argument is not an object derived from L<Rose::HTML::Form::Field>, then a
 fatal error occurs.
 
 The field object's C<name()> is set to the name that it is stored under, and
@@ -854,9 +861,9 @@ information.
 This method is a no-op in this class.  It is meant to be overridden by
 subclasses.  It is called at the end of the C<init()> method if
 C<build_on_init()> is true. (Remember that this class inherits from
-C<Rose::HTML::Object>, which inherits from C<Rose::Object>, which defines the
+L<Rose::HTML::Object>, which inherits from L<Rose::Object>, which defines the
 C<init()> method, which is called from the constructor.  See the
-C<Rose::Object> documentation for more information.)
+L<Rose::Object> documentation for more information.)
 
 If C<build_on_init()> is false, then you must remember to call C<build_form()>
 manually.
@@ -906,7 +913,7 @@ of each compound field appear as separate query parameters.
 =item B<delete_field NAME>
 
 Delete the field stored under the name NAME.  If NAME "isa"
-C<Rose::HTML::Form::Field>, then the C<name()> method is called on it and the
+L<Rose::HTML::Form::Field>, then the C<name()> method is called on it and the
 return value is used as NAME.
 
 =item B<delete_fields>
@@ -963,7 +970,7 @@ under that name exists, then undef is returned.
 
 If both NAME and VALUE arguments are passed, then the field VALUE is stored
 under the name NAME.  If VALUE is not an object derived from
-C<Rose::HTML::Form::Field>, then a fatal error occurs.
+L<Rose::HTML::Form::Field>, then a fatal error occurs.
 
 =item B<fields>
 
@@ -977,7 +984,7 @@ of the same in scalar context.
 
 =item B<hidden_fields>
 
-Returns one or more C<Rose::HTML::Form::Field::Hidden> objects that represent
+Returns one or more L<Rose::HTML::Form::Field::Hidden> objects that represent
 the hidden fields needed to encode all of the field values in this form.
 
 If C<coalesce_hidden_fields()> is true, then each compound field is encoded as
@@ -1013,7 +1020,7 @@ C<name()>, I<not> the name that the field is stored under in the form, which
 may be different), then the (list context) value of that parameter is passed
 as the C<input_value()> for that field.
 
-If a field "isa" C<Rose::HTML::Form::Field::Compound>, and if no parameter
+If a field "isa" L<Rose::HTML::Form::Field::Compound>, and if no parameter
 exactly matches the C<name()> of the compound field, then each subfields may
 be initialized by a parameter name that matches the subfield's C<name()>.
 
@@ -1292,7 +1299,7 @@ Call C<reset()> on each field object.
 
 =item B<self_uri>
 
-Returns a C<Rose::URI> object corresponding to the current state of the form.
+Returns a L<Rose::URI> object corresponding to the current state of the form.
 If C<uri_base()> is set, then it is included in front of what would otherwise
 be the start of the URI (i.e., the value of the form's "action" HTML attribute).
 
@@ -1359,6 +1366,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

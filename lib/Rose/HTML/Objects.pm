@@ -3,7 +3,7 @@ package Rose::HTML::Objects;
 use strict;
 
 # The sole purpose of this module is to provide a version number
-our $VERSION = '0.0143';
+our $VERSION = '0.02';
 
 1;
 
@@ -51,7 +51,7 @@ representations.  In practice, given the purpose of these modules, this is not
 an important limitation.
 
 Any HTML tag can theoretically be represented by a
-C<Rose::HTML::Object>-derived class, but this family of modules was originally
+L<Rose::HTML::Object>-derived class, but this family of modules was originally
 motivated by a desire to simplify the use of HTML forms.
 
 The form/field object interfaces have been heavily abstracted to allow for
@@ -76,6 +76,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

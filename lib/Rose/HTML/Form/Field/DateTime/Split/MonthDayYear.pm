@@ -9,7 +9,7 @@ use Rose::HTML::Form::Field::Text;
 use Rose::HTML::Form::Field::DateTime::Split;
 our @ISA = qw(Rose::HTML::Form::Field::DateTime::Split);
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 sub build_field
 {
@@ -61,6 +61,16 @@ sub decompose_value
     day   => $day,
     year  => $year,
   };
+}
+
+sub is_full
+{
+  my($self) = shift;
+  
+  my $count = grep { defined } 
+              map { $self->field($_)->internal_value }  qw(month day year);
+
+  return $count == 3 ? 1 : 0;
 }
 
 sub coalesce_value
@@ -141,12 +151,12 @@ dates with separate text fields for month, day, and year.
 C<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear> a compound field for
 dates with separate text fields for month, day, and year.
 
-This class inherits (indirectly) from both C<Rose::HTML::Form::Field::DateTime>
-and C<Rose::HTML::Form::Field::Compound>.  This doesn't quite work out as
+This class inherits (indirectly) from both L<Rose::HTML::Form::Field::DateTime>
+and L<Rose::HTML::Form::Field::Compound>.  This doesn't quite work out as
 expected without a bit of tweaking.  We'd like C<inflate_value()> and
-C<validate()> methods to be inherited from C<Rose::HTML::Form::Field::DateTime>,
+C<validate()> methods to be inherited from L<Rose::HTML::Form::Field::DateTime>,
 but everything else to be inherited from
-C<Rose::HTML::Form::Field::Compound>.
+L<Rose::HTML::Form::Field::Compound>.
 
 To solve this problem, there's an intermediate class that imports the correct
 set of methods.  This class then inherits from the intermediate class.  This
@@ -158,8 +168,8 @@ Inheritence shenanigans aside, this class is a good example of a compound field
 that also provides an "inflated" internal value (a C<DateTime> object).
 
 It is important that this class (indirectly) inherits from
-C<Rose::HTML::Form::Field::Compound>. See the
-C<Rose::HTML::Form::Field::Compound> documentation for more information.
+L<Rose::HTML::Form::Field::Compound>. See the
+L<Rose::HTML::Form::Field::Compound> documentation for more information.
 
 =head1 OBJECT METHODS
 
@@ -174,7 +184,7 @@ object, or undef if parsing fails.
 If the parser object has an C<error()> method, it will be called to set the
 error message after a failed parsing attempt.
 
-The parser object defaults to C<Rose::DateTime::Parser-E<gt>new()>.
+The parser object defaults to L<Rose::DateTime::Parser-E<gt>new()|Rose::DateTime::Parser/new>.
 
 =item B<time_zone [TZ]>
 
@@ -189,23 +199,27 @@ Other examples of custom fields:
 
 =over 4
 
-=item C<Rose::HTML::Form::Field::Email>
+=item L<Rose::HTML::Form::Field::Email>
 
 A text field that only accepts valid email addresses.
 
-=item C<Rose::HTML::Form::Field::Time>
+=item L<Rose::HTML::Form::Field::Time>
 
 Uses inflate/deflate to coerce input into a fixed format.
 
-=item C<Rose::HTML::Form::Field::DateTime>
+=item L<Rose::HTML::Form::Field::DateTime>
 
 Uses inflate/deflate to convert input to a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::PhoneNumber::US::Split>
+=item L<Rose::HTML::Form::Field::DateTime::Range>
+
+A compound field whose internal value consists of more than one object.
+
+=item L<Rose::HTML::Form::Field::PhoneNumber::US::Split>
 
 A simple compound field that coalesces multiple subfields into a single value.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
 
 A compound field that includes other compound fields and uses inflate/deflate 
 convert input from multiple subfields into a C<DateTime> object.
@@ -218,6 +232,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

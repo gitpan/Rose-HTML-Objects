@@ -11,7 +11,7 @@ our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 use constant FIELD_SEPARATOR => '.';
 our $FIELD_SEPARATOR = FIELD_SEPARATOR;
 
-our $VERSION = '0.011';
+our $VERSION = '0.02';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -49,6 +49,7 @@ sub init
 
   $self->build_field();
 
+  local $self->{'in_init'} = 1;
   $self->SUPER::init(@_);
 }
 
@@ -59,7 +60,7 @@ sub build_field { }
 sub init_fields
 {
   my($self, %fields) = @_;
-
+  
   foreach my $field_name (keys %fields)
   {
     my $field = $self->field($field_name) || 
@@ -68,12 +69,12 @@ sub init_fields
     if($field->isa('Rose::HTML::Form::Field::Group'))
     {
       $Debug && warn "$self $field_name(s) = $fields{$field_name}\n";
-      $field->input_value($fields{$field_name});
+      $field->_set_input_value($fields{$field_name});
     }
     else
     {
       $Debug && warn "$self $field_name = $fields{$field_name}\n";
-      $field->input_value($fields{$field_name});
+      $field->_set_input_value($fields{$field_name});
     }
   }
 }
@@ -124,16 +125,19 @@ sub field
 sub clear
 {
   my $self = shift;
-  $self->SUPER::clear();
+
+  $self->_set_input_value(undef);
   $self->clear_fields();
-  $self->is_cleared(1);
+  $self->error(undef);
+  $self->SUPER::clear();
 }
 
 sub reset
 {
   my($self) = shift;
+
+  $self->reset_fields();  
   $self->SUPER::reset();
-  $self->reset_fields();
   $self->is_cleared(0);
 }
 
@@ -154,13 +158,16 @@ sub distribute_value
 {
   my($self, $value, $type) = @_;
 
-  $type ||= 'input_value';
+  #$type ||= 'input_value';
+
+  my $method = ((!$type || $type eq 'input_value')) ? '_set_input_value' : $type;
 
   if(my $split = $self->decompose_value($value))
   {
     while(my($name, $val) = each(%$split))
     {
-      $self->field($name)->$type($val);
+      #$self->field($name)->$type($val);
+      $self->field($name)->$method($val);
     }
   }
 }
@@ -178,6 +185,41 @@ sub default_value
   return $self->SUPER::default_value;
 }
 
+*auto_invalidate_parents = \&Rose::HTML::Form::Field::auto_invalidate_parents;
+
+sub invalidate_value
+{
+  my($self) = shift;
+
+  $self->SUPER::invalidate_value();
+
+  if($self->_is_full)
+  {
+    $self->_set_input_value($self->coalesce_value);
+  }
+  else
+  {
+    $self->has_partial_value(1);
+    $self->_set_input_value(undef);
+  }
+
+  my $parent = $self->parent_field;
+
+  if($parent)
+  {
+    $parent->invalidate_value();
+  }
+
+  return;
+}
+
+sub subfield_input_value
+{
+  my($self, $name) = (shift, shift);
+  my $field = $self->field($name) or Carp::croak "No such subfield '$name'";
+  $field->_set_input_value(@_);
+}
+
 sub input_value
 {
   my($self) = shift;
@@ -185,12 +227,23 @@ sub input_value
   if(@_)
   {
     my $value = $self->SUPER::input_value(@_);
+
+    if((my $parent = $self->parent_field) && $self->auto_invalidate_parent)
+    {
+      $parent->invalidate_value;
+    }
+
     $self->distribute_value($value, 'input_value');
   }
 
   my $ret = $self->SUPER::input_value;
+  
+  if(defined $ret || $self->is_empty || $self->has_partial_value)
+  {
+    return $ret;
+  }
 
-  return (defined $ret || $self->is_empty) ? $ret : $self->coalesce_value;
+  return $self->coalesce_value;
 }
 
 sub is_empty
@@ -200,6 +253,18 @@ sub is_empty
   foreach my $field ($self->fields)
   {
     return 0  unless($field->is_empty);
+  }
+
+  return 1;
+}
+
+sub is_full
+{
+  my($self) = shift;
+
+  foreach my $field ($self->fields)
+  {
+    return 0  if($field->is_empty);
   }
 
   return 1;
@@ -344,14 +409,14 @@ compound fields.
 Externally, a compound field must field look and behave as if it is a single,
 simple field.  Although this can be done in many ways, it is important for all
 compound fields to actually inherit from C<Rose::HTML::Form::Field::Compound>.
-C<Rose::HTML::Form> uses this relationship in order to identify compound
+L<Rose::HTML::Form> uses this relationship in order to identify compound
 fields and handle them correctly.  Any compound field that does not inherit
 from C<Rose::HTML::Form::Field::Compound> will not work correctly with
-C<Rose::HTML::Form>.
+L<Rose::HTML::Form>.
 
 This class inherits from, and follows the conventions of,
-C<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
-be documented a second time here.  See the C<Rose::HTML::Form::Field>
+L<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
+be documented a second time here.  See the L<Rose::HTML::Form::Field>
 documentation for more information.
 
 =head1 SUBCLASSING
@@ -375,7 +440,7 @@ I<field names may not contain periods>.
 
 Subfields may be addressed by their fully-qualified name, or by their
 "relative" name from the perspective of the caller.  For example, the
-C<Rose::HTML::Form::Field::DateTime::Split::MDYHMS> custom field class
+L<Rose::HTML::Form::Field::DateTime::Split::MDYHMS> custom field class
 contains a two compound fields: one for the time (split into hours, minutes,
 seconds, and AM/PM) and one for the date (split into month, day, and year).
 Here are a few ways to address the fields.
@@ -407,14 +472,14 @@ Here are a few ways to address the fields.
     # Direct subfield access plus another direct subfield access
     $year_field = $datetime_field->field('date')->field('year');
 
-See the C<Rose::HTML::Form> documentation for more information on how forms
+See the L<Rose::HTML::Form> documentation for more information on how forms
 address and initialize fields based on query parameter names.
 
 =head1 VALIDATION
 
 It is not the job of the C<coalesce_value()> or C<decompose_value()> methods
 to validate input.  That's the job of the C<validate()> method in
-C<Rose::HTML::Form::Field>.
+L<Rose::HTML::Form::Field>.
 
 But as you'll see when you start to write your own C<decompose_value()>
 methods, it's often nice to know whether the input is valid before you try to
@@ -501,12 +566,12 @@ Convenience alias for C<add_fields()>.
 Add the fields specified by ARGS to the list of subfields in
 this compound field.
 
-If an argument is "isa" C<Rose::HTML::Form::Field>, then it is added to the
+If an argument is "isa" L<Rose::HTML::Form::Field>, then it is added to the
 list of fields, stored under the name returned by the field's C<name()> method.
 
 If an argument is anything else, it is used as the field name, and the next
 argument is used as the field object to store under that name.  If the next
-argument is not an object derived from C<Rose::HTML::Form::Field>, then a
+argument is not an object derived from L<Rose::HTML::Form::Field>, then a
 fatal error occurs.
 
 The field object's C<name()> is set to the name that it is stored under, and
@@ -535,6 +600,10 @@ Examples:
     # Mixed
     $compound_field3->add_fields($name_field, 
                                  email => $email_field);
+
+=item B<auto_invalidate_parents [BOOL]>
+
+Get or set a boolean value that indicates whether or not the internal value of any parent fields are automatically invalidated when the input value of this field is set.  The default is true.
 
 =item B<build_field>
 
@@ -581,7 +650,7 @@ the values of the subfields into a single value.  Example:
     }
 
 The value returned must be suitable as an input value.  See the
-C<Rose::HTML::Form::Field> documentation for more information on input values.
+L<Rose::HTML::Form::Field> documentation for more information on input values.
 
 =item B<decompose_value VALUE>
 
@@ -647,7 +716,7 @@ under that name exists, then undef is returned.
 
 If both NAME and VALUE arguments are passed, then the field VALUE is stored
 under the name NAME.  If VALUE is not an object derived from
-C<Rose::HTML::Form::Field>, a fatal error occurs.
+L<Rose::HTML::Form::Field>, a fatal error occurs.
 
 =item B<fields>
 
@@ -659,6 +728,36 @@ or a reference to a list of the same in scalar context.
 Returns a sorted list of field names in list context, or a reference to a list
 of the same in scalar context.
 
+=item B<invalidate_value>
+
+Invalidates the field's value, and the value of all of its parent fields, and so on.  This will cause the field's values to be recreated the next time they are retrieved.
+
+=item B<is_empty>
+
+Returns true if all of the subfields are empty, false otherwise.
+
+=item B<is_full>
+
+Returns false if any of the subfields are empty, true otherwise.  Subclasses can override this method to indicate that a valid value does not require all subfields to be non-empty.
+
+For example, consider a compound time field with subfields for hours, minutes, seconds, and AM/PM.  It may only require the hour and AM/PM subfields to be filled in.  It could then assume values of zero for all of the empty subfields.
+
+Note that this behavior is different than making "00" the default values of the minutes and seconds subfields.  Default values are shown in the HTML serializations of fields, so the minutes and seconds fields would be pre-filled with "00" (unless the field is cleared--see L<Rose::HTML::Form::Field>'s L<reset()|Rose::HTML::Form::Field/reset> and L<clear()|Rose::HTML::Form::Field/clear> methods for more information).
+
+If a subclass does override the C<is_full> method in order to allow one or more empty subfields while still considering the field "full," the subclass must also be sure that its L<coalesce_value()|coalesce_value> method accounts for and handles the possibility of empty fields.
+
+See the L<Rose::HTML::Form::Field::Time::Split::HourMinuteSecond> source code for an actual implementation of the behavior described above.  In particular, look at the implementation of the C<is_full> and C<coalesce_value> methods.
+
+=item B<subfield_input_value NAME [, VALUE]>
+
+Get or set the input value of the subfield named NAME.  If there is no subfield by that name, a fatal error will occur.
+
+This method has the same effect as fetching the subfield using the L<field> method and then calling C<input_value> directly on it, but with one important exception.  Setting a subfield input value using the C<subfield_input_value> method will B<not> invalidate the value of the parent field.
+
+This method is therefore essential for implementing compound fields that need to set their subfield values directly.  Without it, any attempt to do so would cause the compound field to invalidate itself.
+
+See the source code for  L<Rose::HTML::Form::Field::DateTime::Range>'s L<inflate_value> method for a real-world usage example of the C<subfield_input_value> method.
+
 =back
 
 =head1 AUTHOR
@@ -667,6 +766,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

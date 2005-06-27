@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 14;
+use Test::More tests => 20;
 
 BEGIN 
 {
@@ -83,3 +83,37 @@ ok($field->error =~ /\S/, 'error() 2');
 is($field->internal_value, 'foo', 'internal_value() 3');
 is($field->input_value, 'foo', 'input_value() 1');
 is($field->output_value, 'foo', 'output_value() 1');
+
+# Test subfield population
+
+$field->clear;
+
+$field->field('minute')->input_value(34);
+
+ok(!defined $field->internal_value, 'minute only');
+
+$field->field('second')->input_value(56);
+
+ok(!defined $field->internal_value, 'minute and second');
+
+$field->reset;
+
+is($field->internal_value, '08:00:00 AM', 'partial reset()');
+
+$field->clear;
+
+$field->field('hour')->input_value(12);
+
+ok(!defined $field->internal_value, 'hour only');
+
+$field->field('ampm')->input_value('PM');
+
+is($field->internal_value, '12:00:00 PM', 'hour and am/pm');
+
+$field->clear;
+$field->field('ampm')->input_value('PM');
+$field->field('hour')->input_value(' ');
+
+ok(!defined $field->internal_value, 'invalid hour');
+
+

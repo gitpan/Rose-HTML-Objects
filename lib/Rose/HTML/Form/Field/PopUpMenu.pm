@@ -12,6 +12,13 @@ __PACKAGE__->delete_valid_html_attr('multiple');
 
 sub multiple { 0 }
 
+sub internal_value
+{
+  my($self) = shift;
+  my $values = $self->SUPER::internal_value(@_);
+  return $values->[0];
+}
+
 1;
 
 __END__
@@ -45,8 +52,8 @@ C<Rose::HTML::Form::Field::PopUpMenu> is an object representation of a pop-up
 menu field in an HTML form.
 
 This class inherits from, and follows the conventions of,
-C<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
-be documented a second time here.  See the C<Rose::HTML::Form::Field>
+L<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
+be documented a second time here.  See the L<Rose::HTML::Form::Field>
 documentation for more information.
 
 =head1 HTML ATTRIBUTES
@@ -108,8 +115,8 @@ Convenience alias for C<add_options()>.
 
 Adds options to the pop-up menu.  OPTIONS may be a reference to a hash of
 value/label pairs, a reference to an array of values, or a list of objects
-that are of, or inherit from, the classes C<Rose::HTML::Form::Field::Option>
-or C<Rose::HTML::Form::Field::OptionGroup>. Passing an odd number of items in
+that are of, or inherit from, the classes L<Rose::HTML::Form::Field::Option>
+or L<Rose::HTML::Form::Field::OptionGroup>. Passing an odd number of items in
 the value/label argument list causes a fatal error. Options passed as a hash
 reference are sorted by value according to the default behavior of Perl's
 built-in C<sort()> function.  Options are added to the end of the existing
@@ -139,7 +146,7 @@ option exists.
 Get or set the full list of options in the pop-up menu.  OPTIONS may be a
 reference to a hash of value/label pairs, a reference to an array of values,
 or a list of objects that are of, or inherit from, the classes
-C<Rose::HTML::Form::Field::Option> or C<Rose::HTML::Form::Field::OptionGroup>.
+L<Rose::HTML::Form::Field::Option> or L<Rose::HTML::Form::Field::OptionGroup>.
 Passing an odd number of items in the value/label argument list causes a fatal
 error. Options passed as a hash reference are sorted by value according to the
 default behavior of Perl's built-in C<sort()> function.
@@ -155,12 +162,12 @@ Example:
         labels  => { apple => 'Apple', pear => 'Pear' });
 
 Remember that methods are called in the order that they appear in the
-constructor arguments (see the C<Rose::Object> documentation), so C<options()>
+constructor arguments (see the L<Rose::Object> documentation), so C<options()>
 will be called before C<labels()> in the example above.  This is important; it
 will not work in the opposite order.
 
-Returns a list of the pop-up menu's C<Rose::HTML::Form::Field::Option> and/or
-C<Rose::HTML::Form::Field::OptionGroup> objects in list context, or a
+Returns a list of the pop-up menu's L<Rose::HTML::Form::Field::Option> and/or
+L<Rose::HTML::Form::Field::OptionGroup> objects in list context, or a
 reference to an array of the same in scalar context. These are the actual
 objects used in the field. Modifying them will modify the field itself.
 
@@ -187,6 +194,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

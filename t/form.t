@@ -261,7 +261,6 @@ $form->params(age => '27', 'bday.month' => 12, 'bday.day' => 25, 'bday.year' => 
               hobbies => [ 'tennis', 'sleeping' ], name => 'John',
               sex => 'M', status => [ 'married', 'tired' ]);
 
-
 $form->init_fields();
 my $f = $form->field('bday');
 

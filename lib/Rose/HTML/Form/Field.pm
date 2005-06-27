@@ -15,7 +15,7 @@ our @ISA = qw(Rose::HTML::Object);
 use constant HTML_ERROR_SEP  => "<br>\n";
 use constant XHTML_ERROR_SEP => "<br />\n";
 
-our $VERSION = '0.013';
+our $VERSION = '0.02';
 
 #our $Debug = 0;
 
@@ -26,8 +26,11 @@ use Rose::Object::MakeMethods::Generic
     qw(label description)
   ],
 
-  boolean => [ qw(required is_cleared) ],
-  boolean => [ trim_spaces => { default => 1 } ],
+  boolean => [ qw(required is_cleared has_partial_value) ],
+  boolean => 
+  [
+    trim_spaces => { default => 1 },
+  ],
 
   'scalar --get_set_init' => 
   [
@@ -43,6 +46,32 @@ __PACKAGE__->add_valid_html_attrs(qw(
   accesskey
   tabindex
 ));
+
+sub auto_invalidate_parent
+{
+  my($self) = shift;
+  
+  if(@_)
+  {
+    return $self->{'auto_invalidate_parent'} = $_[0] ? 1 : 0;
+  }
+
+  return defined($self->{'auto_invalidate_parent'}) ? 
+    $self->{'auto_invalidate_parent'} : 
+    ($self->{'auto_invalidate_parent'} = 1);
+}
+
+sub invalidate_value
+{
+  $_[0]->{'input_value'} = undef;
+  $_[0]->{'internal_value'} = undef;
+  $_[0]->{'output_value'} = undef;
+}
+
+sub invalidate_output_value
+{
+  $_[0]->{'output_value'} = undef;
+}
 
 sub parent_field
 {
@@ -147,10 +176,20 @@ sub input_value
     $self->{'error'} = undef;
     $self->{'input_value'} = shift;
 
+    if(my $parent = $self->parent_field)
+    {
+      $parent->is_cleared(0)  if(!$parent->{'in_init'} && $parent->_is_full);
+
+      if($self->auto_invalidate_parent)
+      {
+        $parent->invalidate_value;
+      }
+    }
+
     return $self->{'input_value'};
   }
 
-  return undef  if($self->is_cleared);
+  return undef  if($self->is_cleared || $self->has_partial_value);
 
   my $value = 
     (defined $self->{'input_value'}) ? $self->{'input_value'} :  
@@ -162,6 +201,27 @@ sub input_value
   }
 
   return $value;
+}
+
+sub _set_input_value
+{
+  # XXX: Evil, but I can't bear to add 3 method calls to
+  # XXX: save and then restore this value.
+  local $_[0]->{'auto_invalidate_parent'} = 0;
+  shift->input_value(@_);
+}
+
+sub _is_full
+{
+  my($self) = shift;
+  
+  if($self->is_full(@_))
+  {
+    $self->has_partial_value(0);
+    return 1;
+  }
+  
+  return 0;
 }
 
 sub input_value_filtered
@@ -187,9 +247,17 @@ sub internal_value
 
   Carp::croak "Cannot set the internal value.  Use input_value() instead."  if(@_);
 
-  return undef  if($self->is_cleared);
+  return undef  if($self->is_cleared || $self->has_partial_value);
 
-  return $self->{'internal_value'}  if(defined $self->{'internal_value'});
+  if(defined $self->{'internal_value'})
+  {
+    if(wantarray && ref $self->{'internal_value'} eq 'ARRAY')
+    {
+      return @{$self->{'internal_value'}};
+    }
+
+    return $self->{'internal_value'};
+  }
 
   my $value = $self->input_value;
 
@@ -254,6 +322,8 @@ sub is_empty
   no warnings;
   return (shift->internal_value =~ /\S/) ? 0 : 1;
 }
+
+sub is_full { !shift->is_empty }
 
 sub input_prefilter
 {
@@ -327,8 +397,9 @@ sub clear
 {
   my($self) = shift;
 
-  $self->value(undef);
+  $self->_set_input_value(undef);
   $self->error(undef);
+  $self->has_partial_value(0);
   $self->is_cleared(1);
 }
 
@@ -336,8 +407,9 @@ sub reset
 {
   my($self) = shift;
 
-  $self->input_value(undef);
+  $self->_set_input_value(undef);
   $self->error(undef);
+  $self->has_partial_value(0);
   $self->is_cleared(0);
   return 1;
 }
@@ -564,8 +636,8 @@ form.  It defines a generic interface for field input, output, validation, and
 filtering.
 
 This class inherits from, and follows the conventions of,
-C<Rose::HTML::Object>. Inherited methods that are not overridden will not be
-documented a second time here.  See the C<Rose::HTML::Object> documentation
+L<Rose::HTML::Object>. Inherited methods that are not overridden will not be
+documented a second time here.  See the L<Rose::HTML::Object> documentation
 for more information.
 
 =head1 OVERVIEW
@@ -576,7 +648,7 @@ single, logical entity.
 
 C<Rose::HTML::Form::Field> is the base class for field objects.   Since the
 field object will eventually be asked to serialize itself as HTML,
-C<Rose::HTML::Form::Field> inherits from C<Rose::HTML::Object>.  That defines
+C<Rose::HTML::Form::Field> inherits from L<Rose::HTML::Object>.  That defines
 a lot of a field object's interface, leaving only the field-specific functions
 to C<Rose::HTML::Form::Field> itself.
 
@@ -711,8 +783,8 @@ here, it doesn't matter how complex it is internally (or externally, in its
 HTML serialization).
 
 (There are, however, certain rules that compound fields must follow in order to
-work correctly inside C<Rose::HTML::Form> objects.  See the
-C<Rose::HTML::Form::Field::Compound> documentation for more information.)
+work correctly inside L<Rose::HTML::Form> objects.  See the
+L<Rose::HTML::Form::Field::Compound> documentation for more information.)
 
 All of these classes are meant to be a starting point for your own custom
 fields.  The custom fields included in this module distribution are mostly
@@ -766,6 +838,12 @@ PARAMS are name/value pairs.  Any object method is a valid parameter name.
 =head1 OBJECT METHODS
 
 =over 4
+
+=item B<auto_invalidate_parent [BOOL]>
+
+Get or set a boolean value that indicates whether or not the value of any parent field is automatically invalidated when the input value of this field is set.  The default is true.
+
+See L</"parent_field"> and L</"invalidate_value"> for more information.
 
 =item B<clear>
 
@@ -826,7 +904,7 @@ Convenience wrapper for C<hidden_fields()>
 
 =item B<hidden_fields>
 
-Returns one or more C<Rose::HTML::Form::Field::Hidden> objects that represent
+Returns one or more L<Rose::HTML::Form::Field::Hidden> objects that represent
 the hidden fields needed to encode this field's value.
 
 =item B<html>
@@ -878,7 +956,7 @@ The default value is an empty string.
 
 =item B<html_tag>
 
-This method is part of the C<Rose::HTML::Object> API.  In this case, it simply
+This method is part of the L<Rose::HTML::Object> API.  In this case, it simply
 calls C<html_field()>.
 
 =item B<inflate_value VALUE>
@@ -916,6 +994,16 @@ and input filter (if any).
 
 Returns the internal value.
 
+=item B<invalidate_output_value>
+
+Invalidates the field's output value, causing it to be regenerated the next time it is retrieved.  This method is useful if the output value is created based on some configurable attribute of the field (e.g., a delimiter string).  If such an attribute is changed, then any existing output value must be invalidated.
+
+=item B<invalidate_value>
+
+Invalidates the field's value, causing the internal and output values to be recreated the next time they are retrieved.
+
+This method is most useful in conjunction with the L</"parent_field"> attribute.  For example, when the input value of a subfield of a L<compound field|Rose::HTML::Form::Field::Compound> is set directly, it will invalidate the  value of its parent field(s).
+
 =item B<is_cleared>
 
 Returns true if the field is cleared (i.e., if C<clear()> has been called on
@@ -924,9 +1012,11 @@ false otherwise.
 
 =item B<is_empty>
 
-Returns true if the internal value contains any non-whitespace characters.
-Subclasses should be sure to override this if they use internal values
-other than strings.
+Returns false if the internal value contains any non-whitespace characters, true otherwise.  Subclasses should be sure to override this if they use internal values other than strings.
+
+=item B<is_full>
+
+Returns true if the internal value contains any non-whitespace characters, false otherwise.  Subclasses should be sure to override this if they use internal values other than strings.
 
 =item B<label [STRING]>
 
@@ -937,7 +1027,7 @@ for use in the latter.
 
 =item B<label_object [ARGS]>
 
-Returns a C<Rose::HTML::Label> object with its C<for> HTML attribute set to
+Returns a L<Rose::HTML::Label> object with its C<for> HTML attribute set to
 the calling field's C<id> attribute and any other HTML attributes specified by
 the name/value pairs in ARGS.  The HTML contents of the label object are set
 to the field's C<label()>, which has its HTML escaped if C<escape_html()> is
@@ -1065,7 +1155,7 @@ with one of your own.
 
 =item B<xhtml_tag>
 
-This method is part of the C<Rose::HTML::Object> API.  In this case, it simply
+This method is part of the L<Rose::HTML::Object> API.  In this case, it simply
 calls C<xhtml_field()>.
 
 =back
@@ -1076,6 +1166,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

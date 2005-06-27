@@ -64,7 +64,7 @@ addresses.
 =head1 DESCRIPTION
 
 C<Rose::HTML::Form::Field::Email> is a subclass of
-C<Rose::HTML::Form::Field::Text> that uses C<Email::Valid> to allow only valid
+L<Rose::HTML::Form::Field::Text> that uses C<Email::Valid> to allow only valid
 email addresses as input.  It overrides the C<validate()> method of its
 parent class, returning true if the C<internal_value()> is a valid email
 address, or setting an error message and returning false otherwise.
@@ -79,24 +79,28 @@ Other examples of custom fields:
 
 =over 4
 
-=item C<Rose::HTML::Form::Field::Time>
+=item L<Rose::HTML::Form::Field::Time>
 
 Uses inflate/deflate to coerce input into a fixed format.
 
-=item C<Rose::HTML::Form::Field::DateTime>
+=item L<Rose::HTML::Form::Field::DateTime>
 
 Uses inflate/deflate to convert input to a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::PhoneNumber::US::Split>
+=item L<Rose::HTML::Form::Field::DateTime::Range>
+
+A compound field whose internal value consists of more than one object.
+
+=item L<Rose::HTML::Form::Field::PhoneNumber::US::Split>
 
 A simple compound field that coalesces multiple subfields into a single value.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
 
 A compound field that uses inflate/deflate convert input from multiple
 subfields into a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
 
 A compound field that includes other compound fields and uses inflate/deflate 
 convert input from multiple subfields into a C<DateTime> object.
@@ -109,6 +113,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

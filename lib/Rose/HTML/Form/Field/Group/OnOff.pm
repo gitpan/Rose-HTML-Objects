@@ -173,6 +173,19 @@ sub input_value
       $self->{'values'} = \%values;
       $self->init_items;
     }
+
+    if(my $parent = $self->parent_field)
+    {
+      if($parent->_is_full)
+      {
+        $parent->is_cleared(0);
+      }
+
+	  if($self->auto_invalidate_parent)
+      {
+        $parent->invalidate_value;
+      }
+    }
   }
   else
   {

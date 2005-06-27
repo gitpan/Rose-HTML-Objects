@@ -25,7 +25,7 @@ is($field->xhtml_field, '<input maxlength="20" name="name" size="15" type="text"
 
 $field->clear;
 
-is($field->value, undef, 'clear()');
+is($field->internal_value, undef, 'clear()');
 
 is($field->html_field, '<input maxlength="20" name="name" size="15" type="text" value="">', 'html_field() 2');
 is($field->xhtml_field, '<input maxlength="20" name="name" size="15" type="text" value="" />', 'xhtml_field() 2');

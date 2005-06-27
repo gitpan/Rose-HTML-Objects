@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 45;
+use Test::More tests => 48;
 
 BEGIN 
 {
@@ -186,67 +186,6 @@ is($field->html_field,
   '</select></span></span>',
   'mdyhms html_field() 2');
 
-my $save_field = $field->field('datetime.date.month');
-
-$field->field('datetime.date.month' => Rose::HTML::Form::Field::Text->new(size => 5, default => 'mm'));
-
-is($field->html_field, 
-  '<span class="datetime">' .
-  '<span class="date">' .
-  '<input name="datetime.date.month" size="5" type="text" value="mm">/' .
-  '<input class="dd" maxlength="2" name="datetime.date.day" size="2" type="text" value="25">/' .
-  '<input class="yyyy" maxlength="4" name="datetime.date.year" size="4" type="text" value="1984"></span> ' .
-  '<span class="time">' .
-  '<input class="hour" maxlength="2" name="datetime.time.hour" size="2" type="text" value="12">:' .
-  '<input class="minute" maxlength="2" name="datetime.time.minute" size="2" type="text" value="34">:' .
-  '<input class="second" maxlength="2" name="datetime.time.second" size="2" type="text" value="56">' .
-  qq(<select class="ampm" name="datetime.time.ampm" size="1">\n) .
-  qq(<option value=""></option>\n) .
-  qq(<option value="AM">AM</option>\n) .
-  qq(<option selected value="PM">PM</option>\n) .
-  '</select></span></span>',
-  'mdyhms html_field() 3');
-
-$field->field('datetime.date.month' => $save_field);
-
-is($field->html_field, 
-  '<span class="datetime">' .
-  '<span class="date">' .
-  '<input class="mm" maxlength="2" name="datetime.date.month" size="2" type="text" value="12">/' .
-  '<input class="dd" maxlength="2" name="datetime.date.day" size="2" type="text" value="25">/' .
-  '<input class="yyyy" maxlength="4" name="datetime.date.year" size="4" type="text" value="1984"></span> ' .
-  '<span class="time">' .
-  '<input class="hour" maxlength="2" name="datetime.time.hour" size="2" type="text" value="12">:' .
-  '<input class="minute" maxlength="2" name="datetime.time.minute" size="2" type="text" value="34">:' .
-  '<input class="second" maxlength="2" name="datetime.time.second" size="2" type="text" value="56">' .
-  qq(<select class="ampm" name="datetime.time.ampm" size="1">\n) .
-  qq(<option value=""></option>\n) .
-  qq(<option value="AM">AM</option>\n) .
-  qq(<option selected value="PM">PM</option>\n) .
-  '</select></span></span>',
-  'mdyhms html_field() 4');
-
-$field->clear;
-
-is($field->internal_value, undef, 'mdyhms internal_value() 1');
-
-is($field->html_field, 
-  '<span class="datetime">' .
-  '<span class="date">' .
-  '<input class="mm" maxlength="2" name="datetime.date.month" size="2" type="text" value="">/' .
-  '<input class="dd" maxlength="2" name="datetime.date.day" size="2" type="text" value="">/' .
-  '<input class="yyyy" maxlength="4" name="datetime.date.year" size="4" type="text" value=""></span> ' .
-  '<span class="time">' .
-  '<input class="hour" maxlength="2" name="datetime.time.hour" size="2" type="text" value="">:' .
-  '<input class="minute" maxlength="2" name="datetime.time.minute" size="2" type="text" value="">:' .
-  '<input class="second" maxlength="2" name="datetime.time.second" size="2" type="text" value="">' .
-  qq(<select class="ampm" name="datetime.time.ampm" size="1">\n) .
-  qq(<option value=""></option>\n) .
-  qq(<option value="AM">AM</option>\n) .
-  qq(<option value="PM">PM</option>\n) .
-  '</select></span></span>',
-  'mdyhms html_field() 5');
-
 $field->reset;
 
 is($field->internal_value->strftime('%m/%d/%Y %I:%M:%S %p'), '01/02/2000 08:00:00 AM', 'mdyhms internal_value() 2');
@@ -266,7 +205,7 @@ is($field->html_field,
   qq(<option selected value="AM">AM</option>\n) .
   qq(<option value="PM">PM</option>\n) .
   '</select></span></span>',
-  'mdyhms html_field() 6');
+  'mdyhms html_field() 3');
 
 is($field->html_hidden_fields,
    qq(<input name="datetime.date.day" type="hidden" value="02">\n) .
@@ -305,3 +244,36 @@ ok($field->error =~ /\S/, 'mdyhms error() 2');
 is($field->internal_value, undef, 'mdyhms internal_value() 3');
 is($field->input_value, 'foo', 'mdyhms input_value() 2');
 is($field->output_value, 'foo', 'mdyhms output_value() 2');
+
+# Test partial values
+
+$field->clear;
+
+$field->field('date')->field('month')->input_value(12);
+
+ok(!defined $field->internal_value, 'mdyhms month');
+
+$field->field('date.day')->input_value(31);
+
+ok(!defined $field->internal_value, 'mdyhms month, day');
+
+$field->field('date')->field('year')->input_value(2001);
+
+ok(!defined $field->internal_value, 'mdyhms month, day, year');
+
+$field->field('time.hour')->input_value(12);
+
+ok(!defined $field->internal_value, 'mdyhms month, day, year, hour');
+
+$field->field('time')->field('ampm')->input_value('x');
+
+ok(!defined $field->internal_value, 'mdyhms month, day, year, hour x');
+
+$field->field('time')->field('ampm')->input_value('PM');
+
+is($field->field('time')->internal_value, '12:00:00 PM', 'mdyhms time set');
+
+$field->internal_value;
+
+is($field->internal_value->strftime('%Y-%m-%d %I:%M:%S %p'), 
+   '2001-12-31 12:00:00 PM', 'mdyhms month, day, year, hour am/pm');

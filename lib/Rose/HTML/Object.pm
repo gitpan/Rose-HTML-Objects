@@ -625,8 +625,8 @@ the HTML element name, provides methods for specifying, manipulating,
 and validating HTML attributes, and can serialize itself as either HTML
 or XHTML.
 
-This class inherits from, and follows the conventions of, C<Rose::Object>.
-See the C<Rose::Object> documentation for more information.
+This class inherits from, and follows the conventions of, L<Rose::Object>.
+See the L<Rose::Object> documentation for more information.
 
 =head1 VALIDATION
 
@@ -677,7 +677,7 @@ example, adding a valid HTML attribute makes it valid for all objects of the
 class, including any objects that already exist.
 
 Many of the class methods manipulate "inheritable sets" or "inherited
-sets." See the C<Rose::Class::MakeMethods::Set> documentation for an
+sets." See the L<Rose::Class::MakeMethods::Set> documentation for an
 explanation off these method types.
 
 The sets of valid and boolean HTML attributes are "inherited sets."  The
@@ -1101,6 +1101,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

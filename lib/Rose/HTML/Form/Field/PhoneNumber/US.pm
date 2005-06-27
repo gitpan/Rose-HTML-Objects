@@ -81,14 +81,14 @@ in the form: 123-456-7890
 =head1 DESCRIPTION
 
 C<Rose::HTML::Form::Field::PhoneNumber::US> is a subclass of
-C<Rose::HTML::Form::Field::Text> that only allows values that contain exactly
+L<Rose::HTML::Form::Field::Text> that only allows values that contain exactly
 10 digits, which it coerces into the form "123-456-7890".  It overrides the
 C<validate()> and C<inflate_value()>, and C<deflate_value()> methods of its
 parent class.
 
 This is a good example of a custom field class that constrains the kinds of
 inputs that it accepts and coerces all valid input and output to a particular
-format.  See C<Rose::HTML::Form::Field::Time> for another example, and a list
+format.  See L<Rose::HTML::Form::Field::Time> for another example, and a list
 of more complex examples.
 
 =head1 AUTHOR
@@ -97,6 +97,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

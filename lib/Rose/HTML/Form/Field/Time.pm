@@ -119,7 +119,7 @@ coerces valid input into HH:MM:SS AM/PM format.
 =head1 DESCRIPTION
 
 C<Rose::HTML::Form::Field::Time> is a subclass of
-C<Rose::HTML::Form::Field::Text> that only allows values that are valid times,
+L<Rose::HTML::Form::Field::Text> that only allows values that are valid times,
 which it coerces into the form HH:MM:SS AM/PM.  It overrides the C<validate()>
 and C<inflate_value()> methods of its parent class.
 
@@ -133,24 +133,28 @@ Other examples of custom fields:
 
 =over 4
 
-=item C<Rose::HTML::Form::Field::Email>
+=item L<Rose::HTML::Form::Field::Email>
 
 A text field that only accepts valid email addresses.
 
-=item C<Rose::HTML::Form::Field::DateTime>
+=item L<Rose::HTML::Form::Field::DateTime>
 
 Uses inflate/deflate to convert input to a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::PhoneNumber::US::Split>
+=item L<Rose::HTML::Form::Field::DateTime::Range>
+
+A compound field whose internal value consists of more than one object.
+
+=item L<Rose::HTML::Form::Field::PhoneNumber::US::Split>
 
 A simple compound field that coalesces multiple subfields into a single value.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MonthDayYear>
 
 A compound field that uses inflate/deflate convert input from multiple
 subfields into a C<DateTime> object.
 
-=item C<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
+=item L<Rose::HTML::Form::Field::DateTime::Split::MDYHMS>
 
 A compound field that includes other compound fields and uses inflate/deflate 
 convert input from multiple subfields into a C<DateTime> object.
@@ -163,6 +167,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

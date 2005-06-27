@@ -142,8 +142,8 @@ information to find the actual image file on disk.  The C<Image::Size> module
 is used to read the file and determine the correct dimensions.
 
 This class inherits from, and follows the conventions of,
-C<Rose::HTML::Object>. Inherited methods that are not overridden will not be
-documented a second time here.  See the C<Rose::HTML::Object> documentation
+L<Rose::HTML::Object>. Inherited methods that are not overridden will not be
+documented a second time here.  See the L<Rose::HTML::Object> documentation
 for more information.
 
 =head1 HTML ATTRIBUTES
@@ -251,6 +251,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

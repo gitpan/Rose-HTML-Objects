@@ -79,13 +79,13 @@ C<Rose::HTML::Form::Field::RadioButtonGroup> is an object wrapper for a group
 of radio buttons in an HTML form.
 
 This class inherits from, and follows the conventions of,
-C<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
-be documented a second time here.  See the C<Rose::HTML::Form::Field>
+L<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
+be documented a second time here.  See the L<Rose::HTML::Form::Field>
 documentation for more information.
 
 =head1 HTML ATTRIBUTES
 
-None.  This class is simply an aggregator of C<Rose::HTML::Form::Field::RadioButton>
+None.  This class is simply an aggregator of L<Rose::HTML::Form::Field::RadioButton>
 objects.
 
 =head1 CONSTRUCTOR
@@ -112,7 +112,7 @@ Convenience alias for C<add_radio_buttons()>.
 
 Adds radio buttons to the radio button group.  RADIO_BUTTONS may be a
 reference to a hash of value/label pairs, a reference to an array of values,
-or a list of C<Rose::HTML::Form::Field::RadioButton> objects. Passing an odd
+or a list of L<Rose::HTML::Form::Field::RadioButton> objects. Passing an odd
 number of items in the value/label argument list causes a fatal error.
 Radio button values and labels passed as a hash reference are sorted by value
 according to the default behavior of Perl's built-in C<sort()> function. 
@@ -240,7 +240,7 @@ such radio button exists.
 
 Get or set the full list of radio buttons in the group.  RADIO_BUTTONS may be a
 reference to a hash of value/label pairs, a reference to an array of values,
-or a list of C<Rose::HTML::Form::Field::RadioButton> objects. Passing an odd
+or a list of L<Rose::HTML::Form::Field::RadioButton> objects. Passing an odd
 number of items in the value/label argument list causes a fatal error.
 Radio button values and labels passed as a hash reference are sorted by value
 according to the default behavior of Perl's built-in C<sort()> function.
@@ -256,11 +256,11 @@ Example:
         labels        => { apple => 'Apple', pear => 'Pear' });
 
 Remember that methods are called in the order that they appear in the
-constructor arguments (see the C<Rose::Object> documentation), so
+constructor arguments (see the L<Rose::Object> documentation), so
 C<radio_buttons()> will be called before C<labels()> in the example above. 
 This is important; it will not work in the opposite order.
 
-Returns a list of the radio button group's C<Rose::HTML::Form::Field::RadioButton>
+Returns a list of the radio button group's L<Rose::HTML::Form::Field::RadioButton>
 objects in list context, or a reference to an array of the same in scalar
 context. These are the actual objects used in the field. Modifying them will
 modify the field itself.
@@ -307,6 +307,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.

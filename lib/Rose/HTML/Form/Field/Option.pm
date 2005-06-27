@@ -80,8 +80,8 @@ C<Rose::HTML::Form::Field::Option> is an object representation of a single
 option in a pop-up menu or select box in an HTML form.
 
 This class inherits from, and follows the conventions of,
-C<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
-be documented a second time here.  See the C<Rose::HTML::Form::Field>
+L<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not
+be documented a second time here.  See the L<Rose::HTML::Form::Field>
 documentation for more information.
 
 =head1 HTML ATTRIBUTES
@@ -193,6 +193,6 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004 by John C. Siracusa.  All rights reserved.  This program is
+Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is
 free software; you can redistribute it and/or modify it under the same terms
 as Perl itself.
