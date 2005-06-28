@@ -52,3 +52,7 @@
       field with just an hour and an AM/PM specifier filled out.)
     * Shored up support for deeply-nested compound fields.
     * Added hour, minute, second, start date, end date, and date range fields.
+
+0.021 (06.28.2005) - John Siracusa <siracusa@mindspring.com>
+
+    * Added set field.

@@ -32,6 +32,7 @@ lib/Rose/HTML/Form/Field/RadioButton.pm
 lib/Rose/HTML/Form/Field/RadioButtonGroup.pm
 lib/Rose/HTML/Form/Field/Reset.pm
 lib/Rose/HTML/Form/Field/SelectBox.pm
+lib/Rose/HTML/Form/Field/Set.pm
 lib/Rose/HTML/Form/Field/Submit.pm
 lib/Rose/HTML/Form/Field/Text.pm
 lib/Rose/HTML/Form/Field/TextArea.pm
@@ -68,6 +69,7 @@ t/form-field-radio-group.t
 t/form-field-radiobutton.t
 t/form-field-reset.t
 t/form-field-selectbox.t
+t/form-field-set.t
 t/form-field-submit.t
 t/form-field-text.t
 t/form-field-textarea.t
