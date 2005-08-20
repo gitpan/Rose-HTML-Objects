@@ -150,7 +150,7 @@ The parser object defaults to L<Rose::DateTime::Parser-E<gt>new()|Rose::DateTime
 
 =item B<output_format [FORMAT]>
 
-Get or set the format string passed to L<Rose::DateTime::Util>'s L<format_date()|Rose::DateTime::Util/format_date> function in order to generate the field's output value.  Defaults to "%Y-%m-%d %I:%M:%S %p"
+Get or set the format string passed to L<Rose::DateTime::Util>'s L<format_date|Rose::DateTime::Util/format_date> function in order to generate the field's output value.  Defaults to "%Y-%m-%d %I:%M:%S %p"
 
 =item B<time_zone [TZ]>
 

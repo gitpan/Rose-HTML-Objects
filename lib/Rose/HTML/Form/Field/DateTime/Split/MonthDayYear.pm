@@ -66,7 +66,7 @@ sub decompose_value
 sub is_full
 {
   my($self) = shift;
-  
+
   my $count = grep { defined } 
               map { $self->field($_)->internal_value }  qw(month day year);
 

@@ -41,13 +41,13 @@ sub inflate_value
     $value =~ s/^(?:(?:\s*,\s*)+|\s+)//;
 
     last  unless(length($value));
-  
+
     if($value =~ s/^"((?:[^"\\]+|\\.)*)"//)
     {
       my $string = $1;
       # Interpolate backslash escapes
       my $interpolated = eval qq("$string");
-      
+
       if($@)
       {
         $self->error(qq(Invalid quoted string: "$string"));
@@ -91,7 +91,7 @@ Rose::HTML::Form::Field::Set - Text area that accepts whitespace- or comma-separ
     $vals = $field->internal_value;
 
     print $vals->[1]; # "NJ"
-    
+
     $field->input_value('NY, NJ, "New Mexico"');
 
     $vals = $field->internal_value;
@@ -99,7 +99,7 @@ Rose::HTML::Form::Field::Set - Text area that accepts whitespace- or comma-separ
     print $vals->[3]; # "New Mexico"
 
     $field->input_value([ 'New York', 'New Jersey' ]);
-    
+
     print $field->internal_value->[0]; # "New York"
 
     ...

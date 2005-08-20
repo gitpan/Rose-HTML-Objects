@@ -71,13 +71,13 @@ sub init_range_separator_regex { qr(#|\s+to\s+) }
 sub range_separator
 {
   my($self) = shift;
-  
+
   if(@_)
   {
     $self->invalidate_output_value;
     return $self->{'range_separator'} = shift;
   }
-  
+
   return (defined $self->{'range_separator'}) ? $self->{'range_separator'} :
          ($self->{'range_separator'} = $self->init_range_separator);
 }
@@ -270,7 +270,7 @@ C<Rose::HTML::Form::Field::DateTime::Range> is a compound field that represents 
 
 The internal value of this field is a list (in list context) or reference to an array (in scalar context) of two L<DateTime> objects.  The first object is the start date and the second is the end date.  If either of fields are not filled in or are otherwise invalid, then the internal value is undef.
 
-The input value can be a reference to an array of L<DateTime> objects, or strings that can be inflated into L<DateTime> objects by the L<Rose::HTML::Form::Field::DateTime::StartDate> and L<Rose::HTML::Form::Field::DateTime::EndDate> classes.  The input value can also be a concatenation of two such strings, joined by a string that matches the field's L<range_separator_regex>.
+The input value can be a reference to an array of L<DateTime> objects, or strings that can be inflated into L<DateTime> objects by the L<Rose::HTML::Form::Field::DateTime::StartDate> and L<Rose::HTML::Form::Field::DateTime::EndDate> classes.  The input value can also be a concatenation of two such strings, joined by a string that matches the field's L<range_separator_regex|/range_separator_regex>.
 
 This class is a good example of a compound field whose internal value consists of more than one object.  See L<below|/"SEE ALSO"> for more compound field examples.
 
@@ -304,11 +304,11 @@ Get or set the regular expression used to split an input string into start date 
 
     # Change regex, adding support for " - "
     $field->range_separator_regex(qr(#|\s+(?:to|-)\s+));
-    
+
     $field->input_value('2005-04-20 8pm - 1/7/2006 3:05 AM');
-    
+
     ($min, $max) = $field->internal_value;
-    
+
     print $min->day_name; # Wednesday
     print $max->day_name; # Saturday
 

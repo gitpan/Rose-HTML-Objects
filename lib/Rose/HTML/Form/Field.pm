@@ -50,7 +50,7 @@ __PACKAGE__->add_valid_html_attrs(qw(
 sub auto_invalidate_parent
 {
   my($self) = shift;
-  
+
   if(@_)
   {
     return $self->{'auto_invalidate_parent'} = $_[0] ? 1 : 0;
@@ -214,13 +214,13 @@ sub _set_input_value
 sub _is_full
 {
   my($self) = shift;
-  
+
   if($self->is_full(@_))
   {
     $self->has_partial_value(0);
     return 1;
   }
-  
+
   return 0;
 }
 

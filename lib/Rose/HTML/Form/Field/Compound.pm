@@ -60,7 +60,7 @@ sub build_field { }
 sub init_fields
 {
   my($self, %fields) = @_;
-  
+
   foreach my $field_name (keys %fields)
   {
     my $field = $self->field($field_name) || 
@@ -237,7 +237,7 @@ sub input_value
   }
 
   my $ret = $self->SUPER::input_value;
-  
+
   if(defined $ret || $self->is_empty || $self->has_partial_value)
   {
     return $ret;
@@ -742,9 +742,9 @@ Returns false if any of the subfields are empty, true otherwise.  Subclasses can
 
 For example, consider a compound time field with subfields for hours, minutes, seconds, and AM/PM.  It may only require the hour and AM/PM subfields to be filled in.  It could then assume values of zero for all of the empty subfields.
 
-Note that this behavior is different than making "00" the default values of the minutes and seconds subfields.  Default values are shown in the HTML serializations of fields, so the minutes and seconds fields would be pre-filled with "00" (unless the field is cleared--see L<Rose::HTML::Form::Field>'s L<reset()|Rose::HTML::Form::Field/reset> and L<clear()|Rose::HTML::Form::Field/clear> methods for more information).
+Note that this behavior is different than making "00" the default values of the minutes and seconds subfields.  Default values are shown in the HTML serializations of fields, so the minutes and seconds fields would be pre-filled with "00" (unless the field is cleared--see L<Rose::HTML::Form::Field>'s L<reset|Rose::HTML::Form::Field/reset> and L<clear|Rose::HTML::Form::Field/clear> methods for more information).
 
-If a subclass does override the C<is_full> method in order to allow one or more empty subfields while still considering the field "full," the subclass must also be sure that its L<coalesce_value()|coalesce_value> method accounts for and handles the possibility of empty fields.
+If a subclass does override the C<is_full> method in order to allow one or more empty subfields while still considering the field "full," the subclass must also be sure that its L<coalesce_value|/coalesce_value> method accounts for and handles the possibility of empty fields.
 
 See the L<Rose::HTML::Form::Field::Time::Split::HourMinuteSecond> source code for an actual implementation of the behavior described above.  In particular, look at the implementation of the C<is_full> and C<coalesce_value> methods.
 
@@ -752,11 +752,11 @@ See the L<Rose::HTML::Form::Field::Time::Split::HourMinuteSecond> source code fo
 
 Get or set the input value of the subfield named NAME.  If there is no subfield by that name, a fatal error will occur.
 
-This method has the same effect as fetching the subfield using the L<field> method and then calling C<input_value> directly on it, but with one important exception.  Setting a subfield input value using the C<subfield_input_value> method will B<not> invalidate the value of the parent field.
+This method has the same effect as fetching the subfield using the L<field|/field> method and then calling L<input_value|Rose::HTML::Form::Field/input_value> directly on it, but with one important exception.  Setting a subfield input value using the L<subfield_input_value|/subfield_input_value> method will B<not> invalidate the value of the parent field.
 
 This method is therefore essential for implementing compound fields that need to set their subfield values directly.  Without it, any attempt to do so would cause the compound field to invalidate itself.
 
-See the source code for  L<Rose::HTML::Form::Field::DateTime::Range>'s L<inflate_value> method for a real-world usage example of the C<subfield_input_value> method.
+See the source code for  L<Rose::HTML::Form::Field::DateTime::Range>'s L<inflate_value|Rose::HTML::Form::Field::DateTime::Range/inflate_value> method for a real-world usage example of the L<subfield_input_value|/subfield_input_value> method.
 
 =back
 

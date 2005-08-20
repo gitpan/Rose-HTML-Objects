@@ -64,7 +64,7 @@ sub coalesce_value
 sub is_full
 {
   my($self) = shift;
-  
+
   my $count = grep { defined && length } 
               map { $self->field($_)->internal_value }  qw(date time);
 

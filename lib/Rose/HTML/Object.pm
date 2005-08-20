@@ -467,7 +467,7 @@ sub create_html_attr_methods
 # 
 # This method is an implementation detail and is not part of the public "user"
 # API. It is described here for the benefit of those who are subclassing
-# C<Rose::HTML::Object> and who also may find themselves in a bit of a multiplee
+# C<Rose::HTML::Object> and who also may find themselves in a bit of a multiple
 # inheritence bind.
 # 
 # Example:
