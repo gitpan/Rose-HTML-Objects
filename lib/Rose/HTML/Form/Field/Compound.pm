@@ -11,7 +11,7 @@ our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 use constant FIELD_SEPARATOR => '.';
 our $FIELD_SEPARATOR = FIELD_SEPARATOR;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -26,10 +26,10 @@ Rose::HTML::Form::Field::Collection->import_methods
 
 our $Debug = undef;
 
-use Rose::Object::MakeMethods::Generic
-(
-  scalar => 'name',
-);
+# use Rose::Object::MakeMethods::Generic
+# (
+#   scalar => 'name',
+# );
 
 sub init
 {
@@ -77,6 +77,35 @@ sub init_fields
       $field->_set_input_value($fields{$field_name});
     }
   }
+}
+
+sub name
+{
+  my($self) = shift;
+
+  return $self->{'name'}  unless(@_);
+  my $old_name = $self->{'name'};
+  my $name     = $self->{'name'} = shift;
+  my %fields;
+
+  if(defined $old_name && defined $name && $name ne $old_name)
+  {
+    my $replace = qr(^$old_name$FIELD_SEPARATOR);
+
+    foreach my $field ($self->fields)
+    {
+      my $subfield_name = $field->name;
+      $subfield_name =~ s/$replace/$name$FIELD_SEPARATOR/;
+      #$Debug && warn $field->name, " -> $subfield_name\n";
+      $field->name($subfield_name);
+      $fields{$subfield_name} = $field;
+    }
+
+    $self->delete_fields;
+    $self->add_fields(%fields);
+  }
+
+  return $name;
 }
 
 sub field
@@ -400,7 +429,7 @@ other field objects.
 
 =head1 DESCRIPTION
 
-C<Rose::HTML::Form::Field::Compound> is a base class for compound fields. A
+L<Rose::HTML::Form::Field::Compound> is a base class for compound fields. A
 compound field is one that contains other fields.  The example in the
 L<SYNOPSIS> is a full name field made up of three separate text fields, one
 each for first, middle, and last name.  Compound fields can also contain other
@@ -408,10 +437,10 @@ compound fields.
 
 Externally, a compound field must field look and behave as if it is a single,
 simple field.  Although this can be done in many ways, it is important for all
-compound fields to actually inherit from C<Rose::HTML::Form::Field::Compound>.
+compound fields to actually inherit from L<Rose::HTML::Form::Field::Compound>.
 L<Rose::HTML::Form> uses this relationship in order to identify compound
 fields and handle them correctly.  Any compound field that does not inherit
-from C<Rose::HTML::Form::Field::Compound> will not work correctly with
+from L<Rose::HTML::Form::Field::Compound> will not work correctly with
 L<Rose::HTML::Form>.
 
 This class inherits from, and follows the conventions of,

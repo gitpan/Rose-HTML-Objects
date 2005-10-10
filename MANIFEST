@@ -51,7 +51,6 @@ lib/Rose/HTML/Objects.pm
 lib/Rose/HTML/Util.pm
 Makefile.PL
 MANIFEST
-META.yml			Module meta-data (added by MakeMaker)
 t/form-field-checkbox-group.t
 t/form-field-checkbox.t
 t/form-field-compound.t
@@ -82,3 +81,4 @@ t/label.t
 t/logo.png
 t/object-withcontents.t
 t/object.t
+META.yml                                 Module meta-data (added by MakeMaker)
