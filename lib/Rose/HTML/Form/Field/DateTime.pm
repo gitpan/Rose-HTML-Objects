@@ -8,7 +8,7 @@ use Rose::DateTime::Parser;
 use Rose::HTML::Form::Field::Text;
 our @ISA = qw(Rose::HTML::Form::Field::Text);
 
-our $VERSION = '0.012';
+our $VERSION = '0.33';
 
 use Rose::Object::MakeMethods::Generic
 (
@@ -62,7 +62,14 @@ sub validate
   my $date = $self->internal_value;
   return 1  if(ref $date eq 'DateTime');
 
+  if($self->has_partial_value)
+  {
+    $self->error('Incomplete value');
+    return 0;
+  }
+
   my $input = $self->input_value_filtered;
+  no warnings 'uninitialized';
   return 1  unless(length $input);
 
   $date = $self->date_parser->parse_datetime($input);

@@ -5,18 +5,20 @@ use strict;
 use Rose::HTML::Form::Field::DateTime;
 our @ISA = qw(Rose::HTML::Form::Field::DateTime);
 
+our $VERSION = '0.34';
+
 1;
 
 __END__
 
 =head1 NAME
 
-Rose::HTML::Form::Field::DateTime::EndDate - Text field for a "start date" in a date range.
+Rose::HTML::Form::Field::DateTime::StartDate - Text field for a "start date" in a date range.
 
 =head1 SYNOPSIS
 
     $field =
-      Rose::HTML::Form::Field::DateTime::EndDate->new(
+      Rose::HTML::Form::Field::DateTime::StartDate->new(
         label   => 'Date',
         name    => 'date', 
         default => '12/31/2002');
@@ -41,7 +43,7 @@ Rose::HTML::Form::Field::DateTime::EndDate - Text field for a "start date" in a 
 
 =head1 DESCRIPTION
 
-L<Rose::HTML::Form::Field::DateTime::EndDate> is a subclass of L<Rose::HTML::Form::Field::DateTime> that pins the time to the very first moment of the specified date (i.e., 00:00:00.00000000) if the time is left unspecified.
+L<Rose::HTML::Form::Field::DateTime::StartDate> is a subclass of L<Rose::HTML::Form::Field::DateTime> that pins the time to the very first moment of the specified date (i.e., 00:00:00.00000000) if the time is left unspecified.
 
 =head1 AUTHOR
 
