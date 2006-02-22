@@ -1,18 +1,18 @@
-package Rose::HTML::Form::Field::CheckBoxGroup;
+package Rose::HTML::Form::Field::CheckboxGroup;
 
 use strict;
 
 use Carp;
 
-use Rose::HTML::Form::Field::CheckBox;
+use Rose::HTML::Form::Field::Checkbox;
 
 use Rose::HTML::Form::Field::Group;
 use Rose::HTML::Form::Field::Group::OnOff;
 our @ISA = qw(Rose::HTML::Form::Field::Group::OnOff);
 
-our $VERSION = '0.013';
+our $VERSION = '0.50';
 
-sub _item_class       { 'Rose::HTML::Form::Field::CheckBox' }
+sub _item_class       { 'Rose::HTML::Form::Field::Checkbox' }
 sub _item_name        { 'checkbox' }
 sub _item_name_plural { 'checkboxes' }
 
@@ -21,6 +21,8 @@ sub _item_name_plural { 'checkboxes' }
 *checkbox       = \&Rose::HTML::Form::Field::Group::OnOff::item;
 *add_checkboxes = \&Rose::HTML::Form::Field::Group::add_items;
 *add_checkbox   = \&add_checkboxes;
+
+*choices = \&checkboxes;
 
 sub html_table
 {
@@ -53,12 +55,12 @@ __END__
 
 =head1 NAME
 
-Rose::HTML::Form::Field::CheckBoxGroup - A group of checkboxes in an HTML form.
+Rose::HTML::Form::Field::CheckboxGroup - A group of checkboxes in an HTML form.
 
 =head1 SYNOPSIS
 
     $field = 
-      Rose::HTML::Form::Field::CheckBoxGroup->new(name => 'fruits');
+      Rose::HTML::Form::Field::CheckboxGroup->new(name => 'fruits');
 
     $field->checkboxes(apple  => 'Apple',
                        orange => 'Orange',
@@ -81,13 +83,13 @@ Rose::HTML::Form::Field::CheckBoxGroup - A group of checkboxes in an HTML form.
 
 =head1 DESCRIPTION
 
-L<Rose::HTML::Form::Field::CheckBoxGroup> is an object wrapper for a group of checkboxes in an HTML form.
+L<Rose::HTML::Form::Field::CheckboxGroup> is an object wrapper for a group of checkboxes in an HTML form.
 
 This class inherits from, and follows the conventions of, L<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not be documented a second time here.  See the L<Rose::HTML::Form::Field> documentation for more information.
 
 =head1 HTML ATTRIBUTES
 
-None.  This class is simply an aggregator of L<Rose::HTML::Form::Field::CheckBox> objects.
+None.  This class is simply an aggregator of L<Rose::HTML::Form::Field::Checkbox> objects.
 
 =head1 CONSTRUCTOR
 
@@ -95,7 +97,7 @@ None.  This class is simply an aggregator of L<Rose::HTML::Form::Field::CheckBox
 
 =item B<new PARAMS>
 
-Constructs a new L<Rose::HTML::Form::Field::CheckBoxGroup> object based on PARAMS, where PARAMS are name/value pairs.  Any object method is a valid parameter name.
+Constructs a new L<Rose::HTML::Form::Field::CheckboxGroup> object based on PARAMS, where PARAMS are name/value pairs.  Any object method is a valid parameter name.
 
 =back
 
@@ -109,7 +111,7 @@ Convenience alias for L<add_checkboxes()|/add_checkboxes>.
 
 =item B<add_checkboxes CHECKBOXES>
 
-Adds checkboxes to the checkbox group.  CHECKBOXES may be a reference to a hash of value/label pairs, an ordered list of value/label pairs, a reference to an array of values, or a list of L<Rose::HTML::Form::Field::CheckBox> objects. Passing an odd number of items in the value/label argument list causes a fatal error. Checkbox values and labels passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function.  Checkboxes are added to the end of the existing list of checkboxes.
+Adds checkboxes to the checkbox group.  CHECKBOXES may be a reference to a hash of value/label pairs, an ordered list of value/label pairs, a reference to an array of values, or a list of L<Rose::HTML::Form::Field::Checkbox> objects. Passing an odd number of items in the value/label argument list causes a fatal error. Checkbox values and labels passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function.  Checkboxes are added to the end of the existing list of checkboxes.
 
 =item B<add_value VALUE>
 
@@ -125,19 +127,23 @@ Returns the first checkbox (according to the order that they are returned from L
 
 =item B<checkboxes [CHECKBOXES]>
 
-Get or set the full list of checkboxes in the group.  CHECKBOXES may be a reference to a hash of value/label pairs, an ordered list of value/label pairs, a reference to an array of values, or a list of L<Rose::HTML::Form::Field::CheckBox> objects. Passing an odd number of items in the value/label argument list causes a fatal error. Checkbox values and labels passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function.
+Get or set the full list of checkboxes in the group.  CHECKBOXES may be a reference to a hash of value/label pairs, an ordered list of value/label pairs, a reference to an array of values, or a list of L<Rose::HTML::Form::Field::Checkbox> objects. Passing an odd number of items in the value/label argument list causes a fatal error. Checkbox values and labels passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function.
 
 To set an ordered list of checkboxes along with labels in the constructor, use both the L<checkboxes()|/checkboxes> and L<labels()|/labels> methods in the correct order. Example:
 
     $field = 
-      Rose::HTML::Form::Field::CheckBoxGroup->new(
+      Rose::HTML::Form::Field::CheckboxGroup->new(
         name       => 'fruits',
         checkboxes => [ 'apple', 'pear' ],
         labels     => { apple => 'Apple', pear => 'Pear' });
 
 Remember that methods are called in the order that they appear in the constructor arguments (see the L<Rose::Object> documentation), so L<checkboxes()|/checkboxes> will be called before L<labels()|/labels> in the example above.  This is important; it will not work in the opposite order.
 
-Returns a list of the checkbox group's L<Rose::HTML::Form::Field::CheckBox> objects in list context, or a reference to an array of the same in scalar context. These are the actual objects used in the field. Modifying them will modify the field itself.
+Returns a list of the checkbox group's L<Rose::HTML::Form::Field::Checkbox> objects in list context, or a reference to an array of the same in scalar context. These are the actual objects used in the field. Modifying them will modify the field itself.
+
+=item B<choices [CHECKBOXES]>
+
+This is an alias for the L<checkboxes|/checkboxes> method.
 
 =item B<columns [COLS]>
 
@@ -267,4 +273,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

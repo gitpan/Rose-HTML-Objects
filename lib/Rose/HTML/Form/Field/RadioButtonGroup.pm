@@ -10,7 +10,7 @@ use Rose::HTML::Form::Field::Group;
 use Rose::HTML::Form::Field::Group::OnOff;
 our @ISA = qw(Rose::HTML::Form::Field::Group::OnOff);
 
-our $VERSION = '0.013';
+our $VERSION = '0.50';
 
 sub _item_class       { 'Rose::HTML::Form::Field::RadioButton' }
 sub _item_name        { 'radio button' }
@@ -21,6 +21,8 @@ sub _item_name_plural { 'radio buttons' }
 *radio_button      = \&Rose::HTML::Form::Field::Group::OnOff::item;
 *add_radio_buttons = \&Rose::HTML::Form::Field::Group::add_items;
 *add_radio_button  = \&add_radio_buttons;
+
+*choices = \&radio_buttons;
 
 sub html_table
 {
@@ -104,6 +106,10 @@ Convenience alias for L<add_radio_buttons()|/add_radio_buttons>.
 =item B<add_radio_buttons RADIO_BUTTONS>
 
 Adds radio buttons to the radio button group.  RADIO_BUTTONS may be a reference to a hash of value/label pairs, an ordered list of value/label pairs, a reference to an array of values, or a list of L<Rose::HTML::Form::Field::RadioButton> objects. Passing an odd number of items in the value/label argument list causes a fatal error. Radio button values and labels passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function. Radio buttons are added to the end of the existing list of radio buttons.
+
+=item B<choices [RADIO_BUTTONS]>
+
+This is an alias for the L<radio_buttons|/radio_buttons> method.
 
 =item B<columns [COLS]>
 
@@ -241,4 +247,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

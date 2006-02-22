@@ -1,11 +1,11 @@
-package Rose::HTML::Form::Field::CheckBox;
+package Rose::HTML::Form::Field::Checkbox;
 
 use strict;
 
 use Rose::HTML::Form::Field::OnOff::Checkable;
 our @ISA = qw(Rose::HTML::Form::Field::OnOff::Checkable);
 
-our $VERSION = '0.011';
+our $VERSION = '0.50';
 
 __PACKAGE__->delete_valid_html_attrs(qw(ismap usemap alt src));
 __PACKAGE__->required_html_attr_value(type => 'checkbox');
@@ -47,12 +47,12 @@ __END__
 
 =head1 NAME
 
-Rose::HTML::Form::Field::CheckBox - Object representation of a single checkbox field in an HTML form.
+Rose::HTML::Form::Field::Checkbox - Object representation of a single checkbox field in an HTML form.
 
 =head1 SYNOPSIS
 
     $field =
-      Rose::HTML::Form::Field::CheckBox->new(
+      Rose::HTML::Form::Field::Checkbox->new(
         label => 'Run tests', 
         name  => 'tests',  
         value => 'yes');
@@ -67,7 +67,7 @@ Rose::HTML::Form::Field::CheckBox - Object representation of a single checkbox f
 
 =head1 DESCRIPTION
 
-L<Rose::HTML::Form::Field::CheckBox> is an object representation of a single checkbox field in an HTML form.
+L<Rose::HTML::Form::Field::Checkbox> is an object representation of a single checkbox field in an HTML form.
 
 This class inherits from, and follows the conventions of, L<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not be documented a second time here.  See the L<Rose::HTML::Form::Field> documentation for more information.
 
@@ -125,7 +125,7 @@ Boolean attributes:
 
 =item B<new PARAMS>
 
-Constructs a new L<Rose::HTML::Form::Field::CheckBox> object based on PARAMS, where PARAMS are name/value pairs.  Any object method is a valid parameter name.
+Constructs a new L<Rose::HTML::Form::Field::Checkbox> object based on PARAMS, where PARAMS are name/value pairs.  Any object method is a valid parameter name.
 
 =back
 
@@ -165,4 +165,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

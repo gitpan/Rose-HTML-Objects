@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 89;
+use Test::More tests => 193;
 
 BEGIN 
 {
@@ -10,7 +10,7 @@ BEGIN
   use_ok('Rose::HTML::Form::Field::Text');
   use_ok('Rose::HTML::Form::Field::SelectBox');
   use_ok('Rose::HTML::Form::Field::RadioButtonGroup');
-  use_ok('Rose::HTML::Form::Field::CheckBoxGroup');
+  use_ok('Rose::HTML::Form::Field::CheckboxGroup');
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MonthDayYear');
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MDYHMS');
 }
@@ -59,8 +59,8 @@ ok($form->field('foo') eq $field &&
 @fields = $form->fields;
 is(@fields, 2, 'add_fields() objects check');
 
-my @field_names = $form->field_names;
-is(join(', ', @field_names), 'bar, foo', 'field_names()');
+my @field_monikers = $form->field_monikers;
+is(join(', ', @field_monikers), 'bar, foo', 'field_monikers()');
 
 $form->delete_fields();
 @fields = $form->fields;
@@ -68,8 +68,8 @@ is(@fields, 0, 'delete_fields()');
 
 $form->add_fields(foo2 => $field, bar2 => $field2);
 
-ok($form->field('foo2') eq $field && $field->name eq 'foo2' &&
-  $form->field('bar2')  eq $field2 && $field2->name eq 'bar2',
+ok($form->field('foo2') eq $field && $field->name eq 'foo' &&
+  $form->field('bar2')  eq $field2 && $field2->name eq 'bar',
   'add_fields() hash');
 
 @fields = $form->fields;
@@ -90,9 +90,11 @@ ok(!$form->param_exists('b'), 'delete_param()');
 $form->add_param_value('c' => 10);
 ok($form->param_value_exists('c' => 10), 'add_param_value()');
 
-$form->params(foo2 => 2, bar2 => 5);
+$form->params(foo => 2, bar => 5);
+
 $form->init_fields();
-is($form->query_string, 'bar2=5&foo2=2', 'query_string() 1');
+
+is($form->query_string, 'bar=5&foo=2', 'query_string() 1');
 
 $form->clear_fields;
 is($form->query_string, '', 'clear_fields()');
@@ -177,7 +179,7 @@ is($form->html_hidden_fields,
       }),
 
   'status' =>
-    Rose::HTML::Form::Field::CheckBoxGroup->new(
+    Rose::HTML::Form::Field::CheckboxGroup->new(
       checkboxes => [ 'married', 'kids', 'tired' ],
       labels =>
       {
@@ -255,7 +257,7 @@ my $html=<<"EOF";
 EOF
 
 is(join("\n", $form->start_html, 
-              (map { $form->field($_)->html } sort $form->field_names),
+              (map { $form->field($_)->html } sort $form->field_monikers),
               $form->end_html) . "\n", $html, 'html()');
 
 $form->params(age => '27', 'bday.month' => 12, 'bday.day' => 25, 'bday.year' => 1980, 
@@ -371,11 +373,11 @@ my $vals = join(':', map { defined $_ ? $_ : '' }
              join(', ', $form->field('hobbies')->internal_value),
              $form->field('bday')->internal_value);
 
-is($vals, ':m::1984-01-24T00:00:00', 'init_fields() 4');
+is($vals, 'John:m::1984-01-24T00:00:00', 'init_fields() 4');
 
 $form->reset;
 
-$form->params(name  => 'John', 
+$form->params(your_name  => 'John', 
               bday  => '1/24/1984');
 
 $form->init_fields(no_clear => 1);
@@ -386,7 +388,7 @@ $vals = join(':', map { defined $_ ? $_ : '' }
              join(', ', $form->field('hobbies')->internal_value),
              $form->field('bday')->internal_value);
 
-is($vals, ':m:Chess:1984-01-24T00:00:00', 'init_fields() 5');
+is($vals, 'John:m:Chess:1984-01-24T00:00:00', 'init_fields() 5');
 
 
 $form->reset;
@@ -450,8 +452,8 @@ $form->build_form;
 
 is(scalar @fields, 4,'build_on_init() 2');
 
-
 $form = Rose::HTML::Form->new;
+
 $form->add_field(Rose::HTML::Form::Field::DateTime::Split::MDYHMS->new(name => 'event'));
 $form->params(
 {
@@ -486,20 +488,47 @@ is($form->field('event')->html,
 
 $form = MyForm2->new;
 
-is(join(',', $form->field_names), 'name,hobbies,Gender,bday', 'compare_fields() 1');
-is(join(',', map { $_->name } $form->fields), 'your_name,hobbies,Gender,bday', 'compare_fields() 2');
+is(join(',', $form->field_monikers), 'name,hobbies,Gender,bday', 'compare_fields() 1');
+is(join(',', map { $_->name } $form->fields), 'name,hobbies,gender,bday', 'compare_fields() 2');
 
 $form = MyForm3->new;
 
-is(join(',', $form->field_names), 'name,hobbies,bday,Gender', 'field_names() 1');
-is(join(',', map { $_->name } $form->fields), 'your_name,hobbies,bday,Gender', 'field_names() 2');
+is(join(',', $form->field_monikers), 'name,hobbies,bday,Gender', 'field_monikers() 1');
+is(join(',', map { $_->name } $form->fields), 'your_name,hobbies,bday,gender', 'field_monikers() 2');
 
 $form = MyForm4->new;
 
-is(join(',', $form->field_names), 'name,Gender,hobbies,bday', 'field rank() 1');
-is(join(',', map { $_->name } $form->fields), 'your_name,Gender,hobbies,bday', 'field rank() 2');
+is(join(',', $form->field_monikers), 'name,Gender,hobbies,bday', 'field rank() 1');
+is(join(',', map { $_->name } $form->fields), 'your_name,gender,hobbies,bday', 'field rank() 2');
 is($form->field('name')->rank, 1, 'field rank() 3');
 is($form->field('bday')->rank, 4, 'field rank() 4');
+
+#
+# Test field type to class map
+#
+
+my $map = MyForm->field_type_classes;
+my $i = 1;
+
+$form = MyForm->new;
+
+while(my($name, $class) = each(%$map))
+{
+  my $method = ('field', 'add_fields')[$i % 2];
+  ok(UNIVERSAL::isa($form->$method("test_$i" => { type => $name }), $class), 
+     "$method by hash ref - $name");
+  $i++;
+}
+
+$form->delete_fields;
+
+while(my($name, $class) = each(%$map))
+{
+  my $method = ('field', 'add_fields')[$i % 2];
+  ok(UNIVERSAL::isa($form->$method("test_$i" => $name), $class),
+     "$method by type name - $name");
+  $i++;
+}
 
 BEGIN
 {
@@ -556,7 +585,7 @@ BEGIN
         default       => 'm');
 
     $fields{'hobbies'} = 
-      Rose::HTML::Form::Field::CheckBoxGroup->new(
+      Rose::HTML::Form::Field::CheckboxGroup->new(
         name       => 'hobbies',
         checkboxes => [ 'Chess', 'Checkers', 'Knitting' ],
         default    => 'Chess');
@@ -592,7 +621,7 @@ BEGIN
         default       => 'm');
 
     $fields{'hobbies'} = 
-      Rose::HTML::Form::Field::CheckBoxGroup->new(
+      Rose::HTML::Form::Field::CheckboxGroup->new(
         name       => 'hobbies',
         checkboxes => [ 'Chess', 'Checkers', 'Knitting' ],
         default    => 'Chess');
@@ -603,7 +632,7 @@ BEGIN
 
     $self->add_fields(%fields);
 
-    $self->field('name')->html_attr(name => 'your_name');
+    #$self->field('name')->html_attr(name => 'your_name');
   }
 
   sub compare_fields { lc $_[2]->name cmp lc $_[1]->name }
@@ -630,7 +659,7 @@ BEGIN
         default       => 'm');
 
     $fields{'hobbies'} = 
-      Rose::HTML::Form::Field::CheckBoxGroup->new(
+      Rose::HTML::Form::Field::CheckboxGroup->new(
         name       => 'hobbies',
         checkboxes => [ 'Chess', 'Checkers', 'Knitting' ],
         default    => 'Chess');
@@ -644,7 +673,7 @@ BEGIN
     $self->field('name')->html_attr(name => 'your_name');
   }
 
-  sub field_names { wantarray ? qw(name hobbies bday Gender) : [ qw(name hobbies bday Gender) ] }
+  sub field_monikers { wantarray ? qw(name hobbies bday Gender) : [ qw(name hobbies bday Gender) ] }
 
   package MyForm4;
 
@@ -672,7 +701,7 @@ BEGIN
     $self->add_field(%fields); %fields = ();
 
     $fields{'hobbies'} = 
-      Rose::HTML::Form::Field::CheckBoxGroup->new(
+      Rose::HTML::Form::Field::CheckboxGroup->new(
         name       => 'hobbies',
         checkboxes => [ 'Chess', 'Checkers', 'Knitting' ],
         default    => 'Chess');

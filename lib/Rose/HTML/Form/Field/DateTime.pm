@@ -102,7 +102,7 @@ __END__
 
 =head1 NAME
 
-Rose::HTML::Form::Field::DateTime - Text field that inflates valid dates into L<DateTime> objects.
+Rose::HTML::Form::Field::DateTime - Text field that inflates valid dates and times into L<DateTime> objects.
 
 =head1 SYNOPSIS
 
@@ -196,4 +196,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

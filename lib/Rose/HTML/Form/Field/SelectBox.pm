@@ -23,7 +23,7 @@ __PACKAGE__->add_valid_html_attrs
   'onchange',    # %Script;       #IMPLIED  -- the element value was changed --
 );
 
-our $VERSION = '0.013';
+our $VERSION = '0.50';
 
 sub multiple { shift->html_attr('multiple', @_) }
 
@@ -135,6 +135,10 @@ Add VALUE to the list of selected values.
 
 Add multiple values to the list of selected values.
 
+=item B<choices [OPTIONS]>
+
+This is an alias for the L<options|/options> method.
+
 =item B<has_value VALUE>
 
 Returns true if VALUE is selected in the select box, false otherwise.
@@ -193,4 +197,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

@@ -5,7 +5,7 @@ use strict;
 use Rose::HTML::Form::Field::SelectBox;
 our @ISA = qw(Rose::HTML::Form::Field::SelectBox);
 
-our $VERSION = '0.013';
+our $VERSION = '0.50';
 
 __PACKAGE__->required_html_attr_value(size => 1);
 __PACKAGE__->delete_valid_html_attr('multiple');
@@ -108,6 +108,10 @@ Convenience alias for L<add_options()|/add_options>.
 
 Adds options to the pop-up menu.  OPTIONS may be a reference to a hash of value/label pairs, a reference to an array of values, or a list of objects that are of, or inherit from, the classes L<Rose::HTML::Form::Field::Option> or L<Rose::HTML::Form::Field::OptionGroup>. Passing an odd number of items in the value/label argument list causes a fatal error. Options passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function.  Options are added to the end of the existing list of options.
 
+=item B<choices [OPTIONS]>
+
+This is an alias for the L<options|/options> method.
+
 =item B<has_value VALUE>
 
 Returns true if VALUE is selected in the pop-up menu, false otherwise.
@@ -156,4 +160,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

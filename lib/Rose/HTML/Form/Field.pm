@@ -15,7 +15,9 @@ our @ISA = qw(Rose::HTML::Object);
 use constant HTML_ERROR_SEP  => "<br>\n";
 use constant XHTML_ERROR_SEP => "<br />\n";
 
-our $VERSION = '0.02';
+use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
+
+our $VERSION = '0.50';
 
 #our $Debug = 0;
 
@@ -23,7 +25,7 @@ use Rose::Object::MakeMethods::Generic
 (
   scalar => 
   [
-    qw(label description rank)
+    qw(label description rank type)
   ],
 
   boolean => [ qw(required is_cleared has_partial_value) ],
@@ -34,7 +36,8 @@ use Rose::Object::MakeMethods::Generic
 
   'scalar --get_set_init' => 
   [
-    qw(html_prefix html_suffix html_error_separator xhtml_error_separator) 
+    qw(html_prefix html_suffix html_error_separator xhtml_error_separator
+       local_moniker)
   ],
 );
 
@@ -80,6 +83,46 @@ sub parent_field
   return $self->{'parent_field'};
 }
 
+sub parent_form
+{
+  my($self) = shift; 
+  return Scalar::Util::weaken($self->{'parent_form'} = shift)  if(@_);
+  return $self->{'parent_form'};
+}
+
+sub fq_name
+{
+  my($self) = shift;
+  return join(FF_SEPARATOR, grep { defined } $self->form_context_name, 
+                                             $self->field_context_name, 
+                                             $self->local_name);
+}
+
+sub fq_moniker
+{
+  my($self) = shift;
+
+  return join(FF_SEPARATOR, grep { defined } $self->form_context_name,
+                                             $self->field_context_name, 
+                                             $self->local_moniker);
+}
+
+sub init_local_moniker { shift->local_name }
+
+sub form_context_name
+{
+  my($self) = shift;
+  my $parent_form = $self->parent_form or return;
+  return $parent_form->fq_form_name or return;
+}
+
+sub field_context_name
+{
+  my($self) = shift;
+  my $parent_field = $self->parent_field or return;
+  return $parent_field->fq_name or return;
+}
+
 sub init_html_prefix { '' }
 sub init_html_suffix { '' }
 
@@ -100,48 +143,90 @@ sub value
   }
 }
 
+sub resync_name
+{
+  my($self) = shift;
+
+  $self->html_attr('name', undef);
+  $self->name  if($self->parent_field || $self->parent_form);
+  #$self->name($self->fq_name);
+}
+
+sub local_name
+{
+  my($self) = shift;
+
+  if(@_)
+  {
+    my $name = shift;
+
+    no warnings 'uninitialized';
+    if(index($name, FF_SEPARATOR) >= 0 && !$self->isa('Rose::HTML::Form::Field::Hidden'))
+    {
+      Carp::croak "Invalid local field name: $name";
+    }
+
+    my $old_name = $self->{'local_name'};
+    $self->{'local_name'} = $name;    
+
+    if(defined $old_name && $name ne $old_name)
+    {
+      if(my $parent_form = $self->parent_form)
+      {
+        $parent_form->delete_field($old_name);
+        $parent_form->add_field($name => $self);
+      }
+
+      if(my $parent_field = $self->parent_field)
+      {
+        $parent_field->delete_field($old_name);
+        $parent_field->add_field($name => $self);      
+      }
+    }
+
+    return $name;
+  }
+
+  my $name = $self->{'local_name'};
+  return $name  if(defined $name);
+  return $self->{'local_name'} = $self->{'local_moniker'};
+}
+
 sub name
 {
   my($self) = shift;
 
   if(@_)
   {
-    return $self->html_attr('name', shift);
+    $self->local_name(shift);
+    return $self->html_attr('name', $self->fq_name);
   }
-  else
-  {
-    unless(defined $self->html_attr('name'))
-    {
-      return $self->field_name;
-    }
 
-    return $self->html_attr('name');
+  my $name = $self->html_attr('name');
+
+  # The name HTML attr will be an empty string if it's a required attr,
+  # so use length() and not defined()
+  no warnings 'uninitialized';
+  unless(length $name)
+  {
+    return $self->html_attr('name', $self->fq_name);
   }
+
+  return $name;
 }
 
-sub field_name
+sub moniker
 {
   my($self) = shift;
 
   if(@_)
   {
-    $self->{'field_name'} = shift;
-
-    unless(defined $self->name)
-    {
-      $self->html_attr(name => $self->{'field_name'})
-    }
-
-    return $self->{'field_name'};
+    return $self->fq_moniker($self->{'moniker'} = shift);
   }
   else
   {
-    unless(defined $self->{'field_name'})
-    {
-      return $self->{'field_name'} = $self->html_attr('name');
-    }
-
-    return $self->{'field_name'};
+    return $self->{'moniker'}  if(defined $self->{'moniker'});
+    return $self->{'moniker'} = $self->fq_moniker;
   }
 }
 
@@ -819,14 +904,6 @@ Going too far off into the realm of generic help text is not a good idea since t
 
 It may also be useful for debugging.
 
-=item B<field_name [NAME]>
-
-When passed a NAME argument, it sets the name of the field.  If the "name" HTML attribute is not defined, its value is also set to NAME.  NAME is then returned.
-
-If no arguments are passed, and if the field name is not defined, then the field name is set to the value of the "name" HTML attribute and then returned. If the field name was already defined, then it is simply returned.
-
-Note that this means that the field name and the "name" HTML attribute do not necessarily have to be the same (but usually are).
-
 =item B<filter [CODE]>
 
 Sets both the input filter and output filter to CODE.
@@ -933,9 +1010,17 @@ Get or set the field label.  This label is used by the various label printing me
 
 Returns a L<Rose::HTML::Label> object with its C<for> HTML attribute set to the calling field's C<id> attribute and any other HTML attributes specified by the name/value pairs in ARGS.  The HTML contents of the label object are set to the field's L<label()|/label>, which has its HTML escaped if L<escape_html()|Rose::HTML::Object/escape_html> is true (which is the default).
 
+=item B<local_name [NAME]>
+
+Get or set the name of this field from the perspective of the L<parent_form|/parent_form> or L<parent_field|/parent_field>, depending on which type of thing is the direct parent of this field.  The local name should not change, regardless of how deeply this field is nested within other forms or fields.
+
 =item B<name [NAME]>
 
-Get or set the "name" HTML attribute, but return the L<field_name()|/field_name> if the "name" HTML attribute is undefined.
+If passed a NAME argument, then the L<local_name|/local_name> is set to NAME and the "name" HTML attribute is set to the fully-qualified field name, which may include dot (".") separated prefixes for the L<parent forms|/parent_form> and/or L<parent fields|/parent_field>.
+
+If called without any arguments, and if the "name" HTML attribute is empty, then the "name" HTML attribute is set to the fully-qualified field name.
+
+Returns the value of the "name" HTML attribute.
 
 =item B<output_filter [CODE]>
 
@@ -947,7 +1032,11 @@ Returns the output value.
 
 =item B<parent_field [FIELD]>
 
-Get or set the parent field.  This method is provided for the benefit of subclasses that might want to have a hierarchy of field objects.  The reference to the parent field is "weakened" using C<Scalar::Util::weaken()> in order to avoid memory leaks caused by circular references.
+Get or set the parent field.  The parent field should only be set if the direct parent of this field is another field.  The reference to the parent field is "weakened" using L<Scalar::Util::weaken()|Scalar::Util/weaken> in order to avoid memory leaks caused by circular references.
+
+=item B<parent_form [FORM]>
+
+Get or set the parent L<form|Rose::HTML::Form>.  The parent form should only be set if the direct parent of this field is a form.  The reference to the parent form is "weakened" using L<Scalar::Util::weaken()|Scalar::Util/weaken> in order to avoid memory leaks caused by circular references.
 
 =item B<rank [INT]>
 
@@ -1049,4 +1138,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2005 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
