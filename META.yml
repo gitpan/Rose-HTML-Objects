@@ -1,11 +1,14 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Rose-HTML-Objects
-version:      0.50
+version:      0.51
 version_from: lib/Rose/HTML/Objects.pm
 installdirs:  site
 requires:
+    Carp:                          0
+    Clone::PP:                     0
     Email::Valid:                  0
+    HTML::Entities:                0
     Image::Size:                   0
     Rose::DateTime:                0.0133
     Rose::Object:                  0.015

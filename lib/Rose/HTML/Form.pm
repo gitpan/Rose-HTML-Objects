@@ -4,6 +4,7 @@ use strict;
 
 use Carp;
 
+use Clone::PP;
 use Rose::URI;
 
 use URI::Escape qw(uri_escape);
@@ -13,7 +14,7 @@ use Rose::HTML::Form::Field::Collection;
 
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.50';
+our $VERSION = '0.51';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -118,7 +119,8 @@ sub delegate_to_subforms
   {
     my $value = shift;
 
-    $value = 'runtime'  if($value eq '1');
+    # Dumb regex to avoid non-numeric comparison warning
+    $value = 'runtime'  if($value =~ /\d/ && $value == 1);
 
     unless(!$value || $value eq 'compile' || $value eq 'runtime')
     {
@@ -199,6 +201,108 @@ sub is_empty { 0 }
 
 sub delete_params { shift->{'params'} = {} }
 
+sub params_from_cgi
+{
+  my($self, $cgi) = @_;
+
+  croak "Missing CGI argument to params_from_cgi"  unless(@_ > 1);
+
+  unless(UNIVERSAL::isa($cgi, 'CGI') || UNIVERSAL::can($cgi, 'param'))
+  {
+    croak "Argument to params_from_cgi() is not a CGI object and ",
+          "does not have a param() method";
+  }
+
+  my %params;
+
+  foreach my $param ($cgi->param)
+  {
+    my @values = $cgi->param($param);
+    $params{$param} = @values > 1 ? \@values : $values[0];
+  }
+
+  $self->params(\%params);
+}
+
+# IIn a reasonably modern perl, the optimizer will eliminate the 
+# blocks of code that are conditional upon these constants when the 
+# value is zero.
+use constant MP2 => exists $ENV{'MOD_PERL_API_VERSION'} && 
+                    $ENV{'MOD_PERL_API_VERSION'} > 1 ? 1 : 0;
+
+use constant MP1 => # Special environment variable for the test suite
+  ($ENV{'MOD_PERL'} || $ENV{'RHTMLO_TEST_MOD_PERL'}) && 
+  (!exists $ENV{'MOD_PERL_API_VERSION'} || $ENV{'MOD_PERL_API_VERSION'} == 1) ?
+  1 : 0;
+
+use constant MP0 => $ENV{'MOD_PERL'} ? 0 : 1;
+
+my $Loaded_APR1 = 0;
+my $Loaded_APR2 = 0;
+
+sub params_from_apache
+{
+  my($self, $apr) = @_;
+
+  croak "Missing apache request argument to params_from_apache"  unless(@_ > 1);
+
+  if(MP0)
+  {
+    unless(UNIVERSAL::can($apr, 'param'))
+    {
+      croak "Argument to params_from_apache() does not have a param() method";
+    }
+  }
+  elsif(MP1)
+  {
+    if(UNIVERSAL::isa($apr, 'Apache'))
+    {
+      unless($Loaded_APR1) # cheaper than require (really!)
+      {
+        require Apache::Request;
+        $Loaded_APR1 = 1;
+      }
+
+      $apr = Apache::Request->instance($apr);
+    }
+    elsif(!UNIVERSAL::isa($apr, 'Apache::Request') && 
+          !UNIVERSAL::can($apr, 'param'))
+    {
+      croak "Argument to params_from_apache() is not an Apache or ",
+            "Apache::Request object and does not have a param() method";
+    } 
+  }
+  elsif(MP2)
+  {
+    if(UNIVERSAL::isa($apr, 'Apache2::RequestRec'))
+    {
+      unless($Loaded_APR2) # cheaper than require (really!)
+      {
+        require Apache2::Request;
+        $Loaded_APR2 = 1;
+      }
+
+      $apr = Apache2::Request->new($apr);
+    }
+    elsif(!UNIVERSAL::isa($apr, 'Apache2::Request') && 
+          !UNIVERSAL::can($apr, 'param'))
+    {
+      croak "Argument to params_from_apache() is not an Apache2::RequestRec ",
+            "or Apache2::Request object and does not have a param() method";
+    }
+  }
+
+  my %params;
+
+  foreach my $param ($apr->param)
+  {
+    my @values = $apr->param($param);
+    $params{$param} = @values > 1 ? \@values : $values[0];
+  }
+
+  $self->params(\%params);
+}
+
 sub params
 {
   my($self) = shift;
@@ -207,11 +311,11 @@ sub params
   {
     if(@_ == 1 && ref $_[0] eq 'HASH')
     {
-      $self->{'params'} = { %{$_[0]} }; 
+      $self->{'params'} = $_[0]; 
     }
     elsif(@_ % 2 == 0)
     {
-      $self->{'params'} = { @_ };
+      $self->{'params'} = Clone::PP::clone({ @_ });
     }
     else
     {
@@ -231,7 +335,7 @@ sub params
   my $want = wantarray;
   return  unless(defined $want);
 
-  return ($want) ? $self->{'params'} : %{$self->{'params'}};
+  return ($want) ? %{ Clone::PP::clone($self->{'params'}) } : $self->{'params'};
 }
 
 sub param_exists
@@ -440,6 +544,22 @@ sub validate
 
   return 0  if($fail);
   return 1;
+}
+
+sub init_fields_with_cgi
+{
+  my($self) = shift;  
+
+  $self->params_from_cgi(shift);
+  $self->init_fields(@_);
+}
+
+sub init_fields_with_apache
+{
+  my($self) = shift;  
+
+  $self->params_from_apache(shift);
+  $self->init_fields(@_);
 }
 
 sub init_fields
@@ -1194,22 +1314,24 @@ Rose::HTML::Form - HTML form base class.
   {
     my($self) = shift;
 
-    # Base class does standalone field validation
+    # Base class will validate individual fields in isolation,
+    # confirming that all required fields are filled in, and that
+    # the email address and phone number are formatted correctly.
     my $ok = $self->SUPER::validate(@_);
     return $ok  unless($ok);
 
-    # Do other arbitrary inter-field validation here
-    if($self->field('name')->internal_value =~ /foo/ &&
+    # Inter-field validation goes here
+    if($self->field('name')->internal_value ne 'John Doe' &&
        $self->field('phone')->internal_value =~ /^555/)
     {
-      $self->error('...');
+      $self->error('Only John Doe can have a 555 phone number.');
       return 0;
     }
-    ...
+
     return 1;
   }
 
-  sub init_with_person
+  sub init_with_person # give a friendlier name to a base-class method
   {
     my($self, $person) = @_;
     $self->init_with_object($person);
@@ -1218,9 +1340,12 @@ Rose::HTML::Form - HTML form base class.
   sub person_from_form
   {
     my($self) = shift;
+
+    # Base class method does most of the work
     my $person = $self->object_from_form(class => 'Person');
 
-    # Set alt phone to the same as the regular phone
+    # Now fill in the non-obvious details...
+    # e.g., set alt phone to be the same as the regular phone
     $person->alt_phone($self->field('phone')->internal_value);
 
     return $person;
@@ -1236,11 +1361,18 @@ Rose::HTML::Form - HTML form base class.
 
   if(...)
   {
-    # Get query parameters in a hash ref
+    # Get query parameters in a hash ref and pass to the form
     my $params = MyWebServer->get_query_params();
-
-    # Initialize the form with the params hash ref
     $form->params($params);
+
+    # ...or  initialize form params from a CGI object
+    # $form->params_from_cgi($cgi); # $cgi "isa" CGI
+
+    # ...or initialize params from an Apache request object
+    # (mod_perl 1 and 2 both supported)
+    # $form->params_from_apache($r);
+
+    # Initialize the fields based on params
     $form->init_fields();
 
     unless($form->validate) 
@@ -1248,14 +1380,14 @@ Rose::HTML::Form - HTML form base class.
       return error_page(error => $form->error);
     }
 
-    $person = $form->person_from_form(); # $person is a Person object
+    $person = $form->person_from_form; # $person is a Person object
 
     do_something_with($person);
     ...
   }
   else
   {
-    $person = ...; # Get or create a Person object
+    $person = ...; # Get or create a Person object somehow
 
     # Initialize the form with the Person object
     $form->init_with_person($person);
@@ -1291,7 +1423,7 @@ Forms are validated by calling L<validate()|Rose::HTML::Form::Field/validate> on
 
 =head1 NESTED FORMS
 
-Each form can have zero or more fields as well as zero or more sub-forms.  Since E<lt>formE<gt> HTML tags cannot be nested, this nesting of form objects is "flattened" from in the external interfaces such as HTML generation or field addressing.
+Each form can have zero or more fields as well as zero or more sub-forms.  Since E<lt>formE<gt> HTML tags cannot be nested, this nesting of form objects appears "flattened" in the external interfaces such as HTML generation or field addressing.
 
 Here's a simple example of a nested form made up of a C<PersonForm> and an C<AddressForm>.  (Assume C<PersonForm> is constructed as per the L<synopsis|/SYNOPSIS> above, and C<AddressForm> is similar, with street, city, state, and zip code fields.)
 
@@ -1422,7 +1554,7 @@ Get or set the value that determines how (or if) forms of this class delegate un
 
 =item "B<0>"
 
-A value of "0" (well, any false value, really) means that no sub-form delegation will be attempted.
+A value of "0" (or undef or any other false value) means that no sub-form delegation will be attempted.
 
 =item "B<1>"
 
@@ -1900,7 +2032,7 @@ Examples:
 
     ...
 
-    my $form = RegistrationForm->new();
+    $form = RegistrationForm->new();
 
     $form->params(name    => 'John', 
                   gender  => 'm',
@@ -1951,6 +2083,36 @@ Examples:
     #
     # No name, Male, no hobbies, no birthday
     $form->init_fields(no_clear => 1);
+
+=item B<init_fields_with_cgi CGI [, ARGS]>
+
+This method is a shortcut for initializing the form's L<params|/params> with a CGI object and then calling L<init_fields|/init_fields>.  The CGI argument is passed to the L<params_from_cgi|/params_from_cgi> method and ARGS are passed to the L<init_fields|/init_fields> method.
+
+For example, this:
+
+    $form->init_fields_with_cgi($cgi, no_clear => 1);
+
+Is equivalent to this:
+
+    $form->params_from_cgi($cgi);
+    $form->init_fields(no_clear => 1);
+
+See the documentation for the L<params_from_cgi|/params_from_cgi> and L<init_fields|/init_fields> methods for more information.
+
+=item B<init_fields_with_apache APR [, ARGS]>
+
+This method is a shortcut for initializing the form's L<params|/params> with an apache request object and then calling L<init_fields|/init_fields>.  The APR argument is passed to the L<params_from_apache|/params_from_apache> method and ARGS are passed to the L<init_fields|/init_fields> method.
+
+For example, this:
+
+    $form->init_fields_with_apache($r, no_clear => 1);
+
+Is equivalent to this:
+
+    $form->params_from_apache($r);
+    $form->init_fields(no_clear => 1);
+
+See the documentation for the L<params_from_apache|/params_from_apache> and L<init_fields|/init_fields> methods for more information.
 
 =item B<init_with_object OBJECT>
 
@@ -2063,15 +2225,15 @@ Failure to pass at least a NAME argument results in a fatal error.
 
 Get or set all parameters at once.
 
-PARAMS can be a reference to a hash or a list of name/value pairs.  If a parameter has multiple values, those values should be provided in the form of a references to an array of scalar values.  If the list of name/value pairs has an odd number of items, a fatal error occurs.
+PARAMS can be a reference to a hash or a list of name/value pairs.  If a parameter has multiple values, those values should be provided in the form of a reference to an array of scalar values.  If the list of name/value pairs has an odd number of items, a fatal error occurs.
+
+If PARAMS is a reference to a hash, then it is accepted as-is.  That is, no copying of values is done; the actual hash references is stored.  If PARAMS is a list of name/value pairs, then a deep copy is made during assignment.
 
 Regardless of the arguments, this method returns the complete set of parameters in the form of a hash (in list context) or a reference to a hash (in scalar context).
 
 In scalar context, the hash reference returned is a reference to the actual hash used to store parameter names and values in the object.  It should be treated as read-only.
 
-The hash returned in list context is a shallow copy of the actual hash used to store parameter names and values in the object.  It should also be treated as read-only.
-
-If you want a read/write copy, make a deep copy of the hash reference return value and then modify the copy.
+The hash returned in list context is a deep copy of the actual hash used to store parameter names and values in the object.  It may be treated as read/write.
 
 =item B<params_exist>
 
@@ -2080,6 +2242,52 @@ Returns true if any parameters exist, false otherwise.
 =item B<param_exists NAME>
 
 Returns true if a parameter named NAME exists, false otherwise.
+
+=item B<params_from_apache APR>
+
+Set L<params|/params> by extracting parameter names and values from an apache request object.  Calling this method entirely replaces the previous L<params|/params>.
+
+If running under L<mod_perl> 1.x, the APR argument may be:
+
+=over 4
+
+=item * An L<Apache> object.  In this case, the L<Apache::Request> module must also be installed.
+
+=item * An L<Apache::Request> object.
+
+=back
+
+If running under L<mod_perl> 2.x, the APR may be:
+
+=over 4
+
+=item * An L<Apache2::RequestRec> object.  In this case, the L<Apache2::Request> module must also be installed.
+
+=item * An L<Apache2::Request> object.
+
+=back
+
+In all cases, APR may be an object that has a C<param()> method that behaves in the following way:
+
+=over 4
+
+=item * When called in list context with no arguments, it returns a list of parameter names.
+
+=item * When called in list context with a single parameter name argument, it returns a list of values for that parameter.
+
+=back
+
+=item B<params_from_cgi CGI>
+
+Set L<params|/params> by extracting parameter names and values from a L<CGI> object.  Calling this method entirely replaces the previous L<params|/params>.  The CGI argument must be either a L<CGI> object or must have a C<param()> method that behaves in the following way:
+
+=over 4
+
+=item * When called in list context with no arguments, it returns a list of parameter names.
+
+=item * When called in list context with a single parameter name argument, it returns a list of values for that parameter.
+
+=back
 
 =item B<param_value_exists NAME, VALUE>
 
