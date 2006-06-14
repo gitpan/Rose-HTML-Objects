@@ -17,7 +17,7 @@ use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.50';
+our $VERSION = '0.53';
 
 #our $Debug = 0;
 
@@ -920,6 +920,14 @@ Returns one or more L<Rose::HTML::Form::Field::Hidden> objects that represent th
 
 Returns the HTML serialization of the field, along with the HTML error message, if any. The field and error HTML are joined by L<html_error_separator()|/html_error_separator>, which is "E<lt>brE<gt>\n" by default.
 
+=item B<html_error>
+
+Returns the error text, if any, as a snippet of HTML that looks like this:
+
+    <span class="error">Error text goes here</span>
+
+If the L<escape_html|Rose::HTML::Object/escape_html> flag is set to true (the default), then the error text has any HTML in it escaped.
+
 =item B<html_error_separator [STRING]>
 
 Get or set the string used to join the HTML field and HTML error message in the output of the L<html()|/html> method.  The default value is "E<lt>brE<gt>\n"
@@ -934,7 +942,7 @@ Convenience wrapper for L<html_hidden_fields()|/html_hidden_fields>
 
 =item B<html_hidden_fields>
 
-Returns the HTML serialization of the fields returned by L<hidden_fields()|/hidden_fields>, joined by newlines.
+In scalar context, returns the HTML serialization of the fields returned by L<hidden_fields()|/hidden_fields>, joined by newlines.  In list context, returns a list containing the HTML serialization of the fields returned by L<hidden_fields()|/hidden_fields>.
 
 =item B<html_label [ARGS]>
 
@@ -1008,7 +1016,7 @@ Get or set the field label.  This label is used by the various label printing me
 
 =item B<label_object [ARGS]>
 
-Returns a L<Rose::HTML::Label> object with its C<for> HTML attribute set to the calling field's C<id> attribute and any other HTML attributes specified by the name/value pairs in ARGS.  The HTML contents of the label object are set to the field's L<label()|/label>, which has its HTML escaped if L<escape_html()|Rose::HTML::Object/escape_html> is true (which is the default).
+Returns a L<Rose::HTML::Label> object with its C<for> HTML attribute set to the calling field's C<id> attribute and any other HTML attributes specified by the name/value pairs in ARGS.  The HTML contents of the label object are set to the field's L<label()|/label>, which has its HTML escaped if L<escape_html|Rose::HTML::Object/escape_html> is true (which is the default).
 
 =item B<local_name [NAME]>
 
@@ -1094,6 +1102,14 @@ If a VALUE argument is passed, it sets both the input value and the "value" HTML
 
 Returns the XHTML serialization of the field, along with the HTML error message, if any. The field and error HTML are joined by L<xhtml_error_separator()|/xhtml_error_separator>, which is "E<lt>br /E<gt>\n" by default.
 
+=item B<xhtml_error>
+
+Returns the error text, if any, as a snippet of XHTML that looks like this:
+
+    <span class="error">Error text goes here</span>
+
+If the L<escape_html|Rose::HTML::Object/escape_html> flag is set to true (the default), then the error text has any HTML in it escaped.
+
 =item B<xhtml_error_separator [STRING]>
 
 Get or set the string used to join the XHTML field and HTML error message in the output of the L<xhtml()|/xhtml> method.  The default value is "E<lt>br /E<gt>\n"
@@ -1108,7 +1124,7 @@ Convenience wrapper for L<xhtml_hidden_fields()|/xhtml_hidden_fields>
 
 =item B<xhtml_hidden_fields>
 
-Returns the XHTML serialization of the fields returned by L<hidden_fields()|/hidden_fields>, joined by newlines.
+In scalar context, returns the XHTML serialization of the fields returned by L<hidden_fields()|/hidden_fields>, joined by newlines.  In list context, returns a list containing the XHTML serialization of the fields returned by L<hidden_fields()|/hidden_fields>.
 
 =item B<xhtml_label [ARGS]>
 

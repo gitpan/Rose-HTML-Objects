@@ -543,7 +543,15 @@ sub validate
     $fail++  unless($field->validate);
   }
 
-  return 0  if($fail);
+  if($fail)
+  {
+    unless(defined $self->error)
+    {
+      $self->error('One or more fields have errors.');
+    }
+
+    return 0;
+  }
   return 1;
 }
 
@@ -601,7 +609,7 @@ sub _init_field
   else
   {
     return  unless((($name_exists || $name_attr_exists || $moniker_exists) &&
-		          !$field->isa('Rose::HTML::Form::Field::Submit')) || $on_off);
+                  !$field->isa('Rose::HTML::Form::Field::Submit')) || $on_off);
 
     if($field->isa('Rose::HTML::Form::Field::Group'))
     {
@@ -2353,6 +2361,8 @@ Get or set the character used to separate parameter name/value pairs in the retu
 =item B<validate>
 
 Validate the form by calling L<validate()|Rose::HTML::Form::Field/validate> on each field.  If any field returns false from its L<validate()|Rose::HTML::Form::Field/validate> call, then this method returns false. Otherwise, it returns true.
+
+If this method returns false and an L<error|Rose::HTML::Object/error> is not defined, then the L<error|Rose::HTML::Object/error> attribute is set to a generic error message.
 
 =item B<validate_field_html_attrs [BOOL]>
 
