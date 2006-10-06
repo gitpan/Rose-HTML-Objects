@@ -6,15 +6,16 @@ use Carp;
 
 use Clone::PP;
 use Rose::URI;
-
+use Scalar::Util qw(refaddr);
 use URI::Escape qw(uri_escape);
+
+use Rose::HTML::Object::Errors qw(:form);
 
 use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
-
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.52';
+our $VERSION = '0.54';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -545,9 +546,9 @@ sub validate
 
   if($fail)
   {
-    unless(defined $self->error)
+    unless($self->has_errors)
     {
-      $self->error('One or more fields have errors.');
+      $self->add_error_id(FORM_HAS_ERRORS);
     }
 
     return 0;
@@ -737,14 +738,43 @@ sub object_from_form
 
   $object ||= $class->new();
 
-  foreach my $field ($self->fields)
+  # Special handling of boolean columns for RDBO
+  if($object->isa('Rose::DB::Object'))
   {
-    my $name = $field->local_name;
+    my $meta = $object->meta;
 
-    if($object->can($name))
+    foreach my $field ($self->fields)
     {
-      #$Debug && warn "$class object $name(", $field->internal_value, ")";
-      $object->$name($field->internal_value);
+      my $name = $field->local_name;
+
+      if($object->can($name))
+      {
+        # Checkboxes setting boolean columns
+        if($field->isa('Rose::HTML::Form::Field::Checkbox') &&
+           $meta->column($name) && $meta->column($name)->type eq 'boolean')
+        {
+          #$Debug && warn "$class object $name(", $field->is_on, ")";
+          $object->$name($field->is_on);        
+        }
+        else # everything else
+        {
+          #$Debug && warn "$class object $name(", $field->internal_value, ")";
+          $object->$name($field->internal_value);
+        }
+      }
+    }
+  }
+  else
+  {
+    foreach my $field ($self->fields)
+    {
+      my $name = $field->local_name;
+
+      if($object->can($name))
+      {
+        #$Debug && warn "$class object $name(", $field->internal_value, ")";
+        $object->$name($field->internal_value);
+      }
     }
   }
 
@@ -814,6 +844,12 @@ sub add_forms
     if(UNIVERSAL::isa($arg, 'Rose::HTML::Form'))
     {
       $form = $arg;
+
+      if(refaddr($form) eq refaddr($self))
+      {
+        croak "Cannot nest a form within itself";
+      }
+
       $name = $form->form_name;
 
       unless(defined $form->rank)
@@ -826,7 +862,14 @@ sub add_forms
       $name = $arg;
       $form = shift;
 
-      unless(UNIVERSAL::isa($form, 'Rose::HTML::Form'))
+      if(UNIVERSAL::isa($form, 'Rose::HTML::Form'))
+      {
+        if(refaddr($form) eq refaddr($self))
+        {
+          croak "Cannot nest a form within itself";
+        }
+      }
+      else
       {
         Carp::croak "Not a Rose::HTML::Form object: $form";
       }
@@ -1126,6 +1169,8 @@ sub field_monikers
   return wantarray ? @{$self->{'field_monikers'}} : $self->{'field_monikers'};
 }
 
+sub field_names { shift->field_monikers(@_) }
+
 sub _find_field_info
 {
   my($self, $form, $list) = @_;
@@ -1290,7 +1335,21 @@ sub AUTOLOAD
   goto &Rose::HTML::Object::AUTOLOAD;
 }
 
+if($ENV{'MOD_PERL'} || $ENV{'RHTMLO_PRIME_CACHES'})
+{
+  __PACKAGE__->localizer->load_all_messages;
+}
+
 1;
+
+__DATA__
+[% LOCALE en %]
+
+FORM_HAS_ERRORS = "One or more fields have errors."
+
+[% LOCALE xx %] # for testing only
+
+FORM_HAS_ERRORS = "Une ou plusieurs zones ont des erreurs."
 
 __END__
 
@@ -1777,7 +1836,7 @@ The default implementation performs a string comparison on the L<name|Rose::HTML
 
 =item B<compare_forms [FORM1, FORM2]>
 
-Compare two forms, returning 1 if FORM1 should come before FORM2, -1 if FORM2 should come before FORM1, or 0 if neither form should come before the other.  This method is called from within the L<form_names|/form_names> method to determine the order of the sub-forms nested within this form.
+Compare two forms, returning 1 if FORM1 should come before FORM2, -1 if FORM2 should come before FORM1, or 0 if neither form should come before the other.  This method is called from within the L<form_names|/form_names> and L<field_monikers|/field_monikers> methods to determine the order of the sub-forms nested within this form.
 
 The default implementation compares the L<rank|/rank> of the forms in numeric context.
 
@@ -1847,13 +1906,17 @@ If both NAME and VALUE arguments are passed, then the VALUE must be a L<Rose::HT
 
 =item B<fields>
 
-Returns an ordered list of this form's field objects in list context, or a reference to this list in scalar context.  The order of the fields matches the order of the field names returned by the L<field_names|/field_names> method.
+Returns an ordered list of this form's field objects in list context, or a reference to this list in scalar context.  The order of the fields matches the order of the field names returned by the L<field_monikers|/field_monikers> method.
+
+=item B<field_monikers>
+
+Returns an ordered list of field monikers in list context, or a reference to this list in scalar context.  A "moniker" is a fully qualified name, including any sub-form or sub-field prefixes  (e.g., "pa.person.email" as seen in the L<nested forms|/"NESTED FORMS"> section above).
+
+The order is determined by the L<compare_forms|/compare_forms> and L<compare_fields|/compare_fields> methods.  The L<compare_forms|/compare_forms> method is passed the parent form of each field.  If it returns a true value, then that value is used to sort the two fields being compared.  If it returns false, then the L<compare_fields|/compare_fields> method is called with the two field objects as arguments and its return value is used to determine the order.  See the documentation for the L<compare_forms|/compare_forms> and L<compare_fields|/compare_fields> methods for more information.
 
 =item B<field_names>
 
-Returns an ordered list of field names in list context, or a reference to this list in scalar context.  The order is determined by the L<compare_fields|/compare_fields> method by default.
-
-You can override the L<compare_fields|/compare_fields> method in your subclass to provide a custom sort order, or you can override the L<field_names|/field_names> method itself to provide an arbitrary  order, ignoring the L<compare_fields|/compare_fields> method entirely.
+This method simply calls L<field_monikers|/field_monikers>.
 
 =item B<field_rank_counter [INT]>
 
@@ -1974,9 +2037,7 @@ Get or set the name of this form.  This name may or may not have any connection 
 
 =item B<form_names>
 
-Returns an ordered list of form names in list context, or a reference to this list in scalar context.  The order is determined by the L<compare_forms|/compare_forms> method by default.
-
-You can override the L<compare_forms|/compare_forms> method in your subclass to provide a custom sort order, or you can override the L<form_names|/form_names> method itself to provide an arbitrary  order, ignoring the L<compare_forms|/compare_forms> method entirely.
+Returns an ordered list of form names in list context, or a reference to this list in scalar context.  The order is determined by the L<compare_forms|/compare_forms> method.  Note that this only lists the forms that are direct children of the current form.  Forms that are nested more than one level deep are not listed.
 
 =item B<form_rank_counter [INT]>
 
@@ -2314,7 +2375,7 @@ Returns a URI-escaped (but I<not> HTML-escaped) query string that corresponds to
 
 =item B<rank [INT]>
 
-Get or set the form's rank.  This value can be used for any purpose that suits you, but by default it's used by the L<compare_forms()|Rose::HTML::Form/compare_forms> method to sort sub-forms.
+Get or set the form's rank.  This value can be used for any purpose that suits you, but by default it's used by the L<compare_forms|/compare_forms> method to sort sub-forms.
 
 =item B<reset>
 

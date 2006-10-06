@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 221;
+use Test::More tests => 233;
 
 BEGIN 
 {
@@ -16,6 +16,8 @@ BEGIN
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MonthDayYear');
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MDYHMS');
 }
+
+our $Have_RDBO;
 
 my $form = Rose::HTML::Form->new;
 ok(ref $form && $form->isa('Rose::HTML::Form'), 'new()');
@@ -214,7 +216,10 @@ $fields{'name'} = Rose::HTML::Form::Field::Text->new;
 $fields{'age'}  = Rose::HTML::Form::Field::Text->new(size => 2);
 $fields{'bday'} = Rose::HTML::Form::Field::DateTime::Split::MonthDayYear->new(name => 'bday');
 
-$form->add_fields(%fields);
+$form->add_fields(map { $_ => $fields{$_} } sort keys %fields);
+
+is_deeply(scalar $form->field_names, [ 'age', 'bday', 'name' ], 'field_names() 1');
+is_deeply(scalar $form->field_monikers, [ 'age', 'bday', 'name' ], 'field_monikers() 1');
 
 is($form->html_hidden_fields, 
    qq(<input name="age" type="hidden" value="">\n) .
@@ -637,8 +642,73 @@ while(my($name, $class) = each(%$map))
   $i++;
 }
 
+SKIP:
+{
+  skip('RDBO tests', 1)  unless($Have_RDBO);
+
+  my $form = Rose::HTML::Form->new;
+  $form->add_fields(id => 'text', b => 'checkbox');
+  $form->params({ b => "on", id => 123 });
+  $form->init_fields;
+  my $o = $form->object_from_form('MyRDBO');
+  is($o->b, 1, 'checkbox to RDBO boolean column');
+}
+
+use Rose::HTML::Object::Errors qw(:form :field);
+
+$form = MyForm->new;
+$form->field('name')->required(1);
+$form->validate;
+
+$form->locale('en');
+is($form->error->id, FORM_HAS_ERRORS, 'form error id 1');
+is($form->error->as_string, 'One or more fields have errors.', 'form error msg 1');
+is($form->field('name')->error->id, FIELD_REQUIRED, 'form field error id 1');
+is($form->field('name')->error->as_string, 'This is a required field.', 'form field error message 1');
+$form->locale('xx');
+is($form->error->as_string, 'Une ou plusieurs zones ont des erreurs.', 'form error msg 2');
+is($form->field('name')->error->id, FIELD_REQUIRED, 'form field error id 1');
+is($form->field('name')->error->as_string, "C'est une zone exigée.", 'form field error message 2');
+$form->locale('nonesuch');
+
+is($form->error->as_string, 'One or more fields have errors.', 'form error msg 3');
+is($form->field('name')->error->as_string, 'This is a required field.', 'form field error message 3');
+
+
 BEGIN
 {
+  our $Have_RDBO;
+
+  package MyRDBO;
+
+  eval 
+  {
+    require Rose::DB::Object;
+    require Rose::DB;
+  };
+
+  if($@)
+  {
+    $Have_RDBO = 0;
+  }
+  else
+  {
+    Rose::DB->register_db(driver => 'sqlite');
+
+    $Have_RDBO = 1;
+    our @ISA = qw(Rose::DB::Object);
+
+    MyRDBO->meta->setup
+    (
+      table => 'foo',
+      columns =>
+      [
+        id => { type => 'serial', primary_key => 1 },
+        b  => { type => 'boolean' },
+      ],
+    );
+  }
+
   package MyObject;
 
   sub new

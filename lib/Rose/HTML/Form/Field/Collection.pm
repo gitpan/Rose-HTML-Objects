@@ -3,6 +3,7 @@ package Rose::HTML::Form::Field::Collection;
 use strict;
 
 use Carp();
+use Scalar::Util qw(refaddr);
 
 use Rose::HTML::Form::Field::Hidden;
 
@@ -14,7 +15,7 @@ use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 # Variables for use in regexes
 our $FF_SEPARATOR_RE = quotemeta FF_SEPARATOR;
 
-our $VERSION = '0.52';
+our $VERSION = '0.54';
 
 #
 # Class data
@@ -297,6 +298,11 @@ sub add_fields
     {
       my $field = $arg;
 
+      if(refaddr($field) eq refaddr($self))
+      {
+        Carp::croak "Cannot nest a field within itself";
+      }
+
       $field->local_name($field->name);
 
       unless(defined $field->rank)
@@ -311,7 +317,14 @@ sub add_fields
     {
       my $field = shift;
 
-      unless(UNIVERSAL::isa($field, 'Rose::HTML::Form::Field'))
+      if(UNIVERSAL::isa($field, 'Rose::HTML::Form::Field'))
+      {
+        if(refaddr($field) eq refaddr($self))
+        {
+          Carp::croak "Cannot nest a field within itself";
+        }
+      }
+      else
       {
         $field = $self->make_field($arg, $field);
       }

@@ -2,10 +2,12 @@ package Rose::HTML::Form::Field::Integer;
 
 use strict;
 
+use Rose::HTML::Object::Errors qw(:number);
+
 use Rose::HTML::Form::Field::Text;
 our @ISA = qw(Rose::HTML::Form::Field::Text);
 
-our $VERSION = '0.52';
+our $VERSION = '0.54';
 
 use Rose::Object::MakeMethods::Generic
 (
@@ -27,12 +29,19 @@ sub validate
   my $min = $self->min;
   my $max = $self->max;
 
-  my $name = $self->label || $self->name;
+  my $name = sub { $self->label || $self->name };
 
   unless($value =~ /^-?\d+$/)
   {
-    $self->error("$name must be a" . (defined $min && $min >= 0 ? 
-                 ' positive ' : 'n ') . 'integer');
+    if(defined $min && $min >= 0)
+    {
+      $self->add_error_id(NUM_INVALID_INTEGER_POSITIVE, { label => $name })
+    }
+    else
+    {
+      $self->add_error_id(NUM_INVALID_INTEGER, { label => $name })
+    }
+
     return 0;
   }
 
@@ -40,18 +49,18 @@ sub validate
   {
     if($min == 0)
     {
-      $self->error("$name must be a positive integer");
+      $self->add_error_id(NUM_NOT_POSITIVE_INTEGER, { label => $name });
     }
     else
     {
-      $self->error("$name must be greater than " . ($min - 1));
+      $self->add_error_id(NUM_BELOW_MIN, { label => $name, value => ($min - 1) });
     }
     return 0;
   }
 
   if(defined $max && $value > $max)
   {
-    $self->error("$name must be less than or equal to $max");
+    $self->add_error_id(NUM_ABOVE_MAX, { label => $name, value => $max });
     return 0;
   }
 
@@ -59,6 +68,16 @@ sub validate
 }
 
 1;
+
+__DATA__
+
+[% LOCALE en %]
+
+NUM_INVALID_INTEGER          = "[label] must be an integer."
+NUM_INVALID_INTEGER_POSITIVE = "[label] must be a positive integer."
+NUM_NOT_POSITIVE_INTEGER     = "[label] must be a positive integer."
+NUM_BELOW_MIN                = "[label] must be greater than [value]."
+NUM_ABOVE_MAX                = "[label] must be less than or equal to [value]."
 
 __END__
 

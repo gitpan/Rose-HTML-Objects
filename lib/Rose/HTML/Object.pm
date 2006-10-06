@@ -5,22 +5,35 @@ use strict;
 use Carp;
 
 use Rose::HTML::Util();
+use Rose::HTML::Object::Message::Localizer;
 
-use Rose::Object;
-our @ISA = qw(Rose::Object);
+use Rose::HTML::Object::Localized;
+our @ISA = qw(Rose::HTML::Object::Localized);
 
-our $VERSION = '0.52';
+our $VERSION = '0.54';
 
 our $Debug = undef;
 
+# use Rose::HTML::Object::MakeMethods
+# (
+#   localized_errors =>
+#   [
+#     'errors',
+#   ],
+# );
+
 use Rose::Object::MakeMethods::Generic
 (
-  scalar  => 'error',
-
   boolean =>
   [
     'escape_html'         => { default => 1 },
     'validate_html_attrs' => { default => 1 }
+  ],
+
+  'scalar' =>
+  [
+    'html_error_formatter',
+    'xhtml_error_formatter',
   ],
 );
 
@@ -61,6 +74,8 @@ use Rose::Class::MakeMethods::Set
     },
   ]
 );
+
+__PACKAGE__->localizer(Rose::HTML::Object::Message::Localizer->new);
 
 __PACKAGE__->autoload_html_attr_methods(1);
 
@@ -143,6 +158,7 @@ sub delete_html_attrs
 
   if(@_)
   {
+    local $_;
     delete $self->{'html_attrs'}{$_}  for(@_);
     return scalar @_;
   }
@@ -160,6 +176,7 @@ sub clear_html_attrs
 
   if(@_)
   {
+    local $_;
     $self->{'html_attrs'}{$_} = undef  for(@_);
     return scalar @_;
   }
@@ -274,6 +291,11 @@ sub html_error
 {
   my($self) = shift;
 
+  if(my $code = $self->html_error_formatter)
+  {
+    return $code->($self);
+  }
+
   my $error = $self->error;
 
   if($error)
@@ -286,7 +308,50 @@ sub html_error
   return '';
 }
 
-*xhtml_error = \&html_error;
+sub xhtml_error
+{
+  my($self) = shift;
+
+  if(my $code = $self->html_error_formatter)
+  {
+    return $code->($self);
+  }
+
+  return $self->html_error;
+}
+
+sub html_errors
+{
+  my($self) = shift;
+
+  if(my $code = $self->html_error_formatter)
+  {
+    return $code->($self);
+  }
+
+  my $error = join(', ', $self->errors);
+
+  if($error)
+  {
+    return qq(<span class="error">) . 
+           (($self->escape_html) ? Rose::HTML::Util::escape_html($error) : $error) .
+           '</span>';
+  }
+
+  return '';
+}
+
+sub xhtml_errors
+{
+  my($self) = shift;
+
+  if(my $code = $self->html_error_formatter)
+  {
+    return $code->($self);
+  }
+
+  return $self->html_errors;
+}
 
 sub html_attrs_string
 {
@@ -294,6 +359,7 @@ sub html_attrs_string
 
   my @html;
 
+  local $_;
   my $required_attrs = $self->required_html_attrs_hash;
   my %boolean_attrs  = map { $_ => 1 } $self->boolean_html_attrs;
   my %attrs = map { $_ => 1 } (keys(%{$self->{'html_attrs'}}), keys(%$required_attrs));
@@ -337,6 +403,7 @@ sub xhtml_attrs_string
 
   my @html;
 
+  local $_;
   my $required_attrs = $self->required_html_attrs_hash;
   my %boolean_attrs  = map { $_ => 1 } $self->boolean_html_attrs;
   my %attrs = map { $_ => 1 } (keys(%{$self->{'html_attrs'}}), keys(%$required_attrs));
@@ -491,6 +558,62 @@ sub create_html_attr_methods
   }
 
   return $count;
+}
+
+# sub localizer
+# {
+#   my($invocant) = shift;
+# 
+#   # Called as object method
+#   if(my $class = ref $invocant)
+#   {
+#     if(@_)
+#     {
+#       return $invocant->{'localizer'} = shift;
+#     }
+# 
+#     return $invocant->{'localizer'} || $class->default_localizer;
+#   }
+#   else # Called as class method
+#   {
+#     if(@_)
+#     {
+#       return $invocant->default_localizer(shift);
+#     }
+# 
+#     return $invocant->default_localizer
+#   }
+# }
+
+# sub locale
+# {
+#   my($invocant) = shift;
+# 
+#   # Called as object method
+#   if(my $class = ref $invocant)
+#   {
+#     if(@_)
+#     {
+#       return $invocant->{'locale'} = shift;
+#     }
+# 
+#     return $invocant->{'locale'} || $invocant->localizer->locale || 
+#            $invocant->localizer->default_locale;
+#   }
+#   else # Called as class method
+#   {
+#     if(@_)
+#     {
+#       return $invocant->default_locale(shift);
+#     }
+# 
+#     return $invocant->localizer->locale || $invocant->localizer->default_locale;
+#   }
+# }
+
+if($ENV{'MOD_PERL'} || $ENV{'RHTMLO_PRIME_CACHES'})
+{
+  __PACKAGE__->localizer->load_all_messages;
 }
 
 # XXX: This is undocumented for now...
@@ -891,6 +1014,10 @@ Get or set an error string.
 =item B<escape_html [BOOL]>
 
 This flag may be used by other methods to decide whether or not to escape HTML.  It is set to true by default.  The only method in L<Rose::HTML::Object> that references it is L<html_error|/html_error>.  All other HTML is escaped as appropriate regardless of the L<escape_html|/escape_html> setting (e.g. the text returned by C<html_attrs_string> always has its attribute values escaped).  Subclasses may consult this flag for similar purposes (which they must document, of course).
+
+=item B<has_error>
+
+Returns true if an L<error|/error> is set, false otherwise.
 
 =item B<html>
 
