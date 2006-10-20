@@ -13,7 +13,7 @@ our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.54';
+our $VERSION = '0.541';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -288,9 +288,16 @@ sub message_for_error_id
   {
     my $msg = $msg_class->new(args => $args);
 
-    if((ref $args eq 'HASH' && keys %$args) || (ref $args eq 'ARRAY' && @$args))
+    if(ref $args eq 'HASH' && keys %$args)
     {
-      $msg->id(FIELD_REQUIRED_SUBFIELD);
+      if(@{$args->{'missing'}} > 1)
+      {
+        $msg->id(FIELD_REQUIRED_SUBFIELDS);
+      }
+      else
+      {
+        $msg->id(FIELD_REQUIRED_SUBFIELD);
+      }
     }
     else
     {
@@ -303,17 +310,29 @@ sub message_for_error_id
   return undef;
 }
 
+if(__PACKAGE__->localizer->auto_load_messages)
+{
+  __PACKAGE__->localizer->load_all_messages;
+}
+
 1;
 
 __DATA__
 
 [% LOCALE en %]
 
-FIELD_REQUIRED_SUBFIELD = "Missing [@missing]."
+FIELD_REQUIRED_SUBFIELD  = "Missing [@missing]."
+FIELD_REQUIRED_SUBFIELDS = "Missing [@missing]."
 
-[% LOCALE xx %]
+[% LOCALE de %]
 
-FIELD_REQUIRED_SUBFIELD = "Missing [@missing( : )]."
+FIELD_REQUIRED_SUBFIELD  = "[@missing] fehlt."
+FIELD_REQUIRED_SUBFIELDS = "[@missing] fehlen."
+
+[% LOCALE fr %]
+
+FIELD_REQUIRED_SUBFIELD  = "Le champ [@missing] manque."
+FIELD_REQUIRED_SUBFIELDS = "Les champs [@missing] manquent."
 
 __END__
 

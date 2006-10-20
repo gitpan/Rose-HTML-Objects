@@ -2,7 +2,9 @@
 
 use strict;
 
-use Test::More tests => 19;
+use FindBin qw($Bin);
+
+use Test::More tests => 23;
 
 BEGIN 
 {
@@ -12,6 +14,8 @@ BEGIN
 
 my $field = Rose::HTML::Form::Field::Compound->new(name => 'date');
 ok(ref $field && $field->isa('Rose::HTML::Form::Field::Compound'), 'new()');
+
+$field->localizer->load_messages_from_file("$Bin/localized-messages");
 
 is(scalar @{ $field->children }, 0, 'children scalar 1');
 is(scalar(() = $field->children), 0, 'children list 1');
@@ -108,5 +112,19 @@ $field->validate;
 is($field->error, 'Missing Day, date.year.', 'error 1');
 
 $field->locale('xx');
-
 is($field->error, 'Missing Le Day : date.year.', 'error 2');
+
+$field->locale('fr');
+is($field->error, 'Les champs Day, date.year manquent.', 'error 3');
+
+$field->field('year')->input_value(2000);
+$field->validate;
+
+$field->locale('en');
+is($field->error, 'Missing Day.', 'error 4');
+
+$field->locale('xx');
+is($field->error, 'Missing Le Day.', 'error 5');
+
+$field->locale('fr');
+is($field->error, 'Le champ Day manque.', 'error 6');

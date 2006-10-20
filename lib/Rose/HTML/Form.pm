@@ -15,7 +15,7 @@ use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.54';
+our $VERSION = '0.541';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -1335,7 +1335,7 @@ sub AUTOLOAD
   goto &Rose::HTML::Object::AUTOLOAD;
 }
 
-if($ENV{'MOD_PERL'} || $ENV{'RHTMLO_PRIME_CACHES'})
+if(__PACKAGE__->localizer->auto_load_messages)
 {
   __PACKAGE__->localizer->load_all_messages;
 }
@@ -1347,9 +1347,14 @@ __DATA__
 
 FORM_HAS_ERRORS = "One or more fields have errors."
 
-[% LOCALE xx %] # for testing only
+[% LOCALE de %]
 
-FORM_HAS_ERRORS = "Une ou plusieurs zones ont des erreurs."
+# oder "Es sind Fehler aufgetreten."
+FORM_HAS_ERRORS = "Ein oder mehrere Felder sind fehlerhaft."
+
+[% LOCALE fr %]
+
+FORM_HAS_ERRORS = "Erreurs dans un ou plusieurs champs."
 
 __END__
 

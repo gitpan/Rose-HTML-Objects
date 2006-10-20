@@ -10,7 +10,7 @@ use Rose::DateTime::Parser;
 use Rose::HTML::Form::Field::Text;
 our @ISA = qw(Rose::HTML::Form::Field::Text);
 
-our $VERSION = '0.33';
+our $VERSION = '0.541';
 
 use Rose::Object::MakeMethods::Generic
 (
@@ -95,6 +95,11 @@ sub validate
   die "This should never be reached!";
 }
 
+if(__PACKAGE__->localizer->auto_load_messages)
+{
+  __PACKAGE__->localizer->load_all_messages;
+}
+
 1;
 
 __DATA__
@@ -102,6 +107,14 @@ __DATA__
 [% LOCALE en %]
 
 DATE_INVALID = "Invalid date."
+
+[% LOCALE de %]
+
+DATE_INVALID = "Ungültiges Datum."
+
+[% LOCALE fr %]
+
+DATE_INVALID = "Date invalide."
 
 __END__
 

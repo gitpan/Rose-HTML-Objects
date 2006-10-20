@@ -7,7 +7,7 @@ use Rose::HTML::Object::Errors qw(:set);
 use Rose::HTML::Form::Field::TextArea;
 our @ISA = qw(Rose::HTML::Form::Field::TextArea);
 
-our $VERSION = '0.01';
+our $VERSION = '0.541';
 
 sub deflate_value
 {
@@ -74,6 +74,11 @@ sub inflate_value
   return \@strings;
 }
 
+if(__PACKAGE__->localizer->auto_load_messages)
+{
+  __PACKAGE__->localizer->load_all_messages;
+}
+
 1;
 
 __DATA__
@@ -82,6 +87,16 @@ __DATA__
 
 SET_INVALID_QUOTED_STRING = "Invalid quoted string: \"[string]\""  # Testing parser "
 SET_PARSE_ERROR = "Could not parse input: parse error at \[[context]\]"
+
+[% LOCALE de %]
+
+SET_INVALID_QUOTED_STRING = "Ungültig gequoteter String: \"[string]\""
+SET_PARSE_ERROR = "Konnte Eingabe nicht parsen: Fehler bei \[[context]\]"
+
+[% LOCALE fr %]
+
+SET_INVALID_QUOTED_STRING = "Texte entre guillemets invalide: \"[string]\""
+SET_PARSE_ERROR = "Impossible d'évaluer la saisie : erreur à \[[context]\]"
 
 __END__
 

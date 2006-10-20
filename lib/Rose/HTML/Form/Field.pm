@@ -19,7 +19,7 @@ use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.54';
+our $VERSION = '0.541';
 
 #our $Debug = 0;
 
@@ -855,7 +855,7 @@ sub locale
   }
 }
 
-if($ENV{'MOD_PERL'} || $ENV{'RHTMLO_PRIME_CACHES'})
+if(__PACKAGE__->localizer->auto_load_messages)
 {
   __PACKAGE__->localizer->load_all_messages;
 }
@@ -865,23 +865,31 @@ if($ENV{'MOD_PERL'} || $ENV{'RHTMLO_PRIME_CACHES'})
 __DATA__
 [% LOCALE en %]
 
-FIELD_REQUIRED_GENERIC = "This is a required field."
+FIELD_REQUIRED_GENERIC  = "This is a required field."
+FIELD_REQUIRED_LABELLED = "[1] is a required field."
 
-[% START FIELD_REQUIRED_LABELLED %]
-[1] is a required field.
-[% END FIELD_REQUIRED_LABELLED %]
+FIELD_PARTIAL_VALUE     = "Incomplete value."
+FIELD_INVALID_GENERIC   = "Value is invalid."
+FIELD_INVALID_LABELLED  = "[label] is invalid."
 
-FIELD_PARTIAL_VALUE = "Incomplete value."
-FIELD_INVALID_GENERIC = "Value is invalid."
-FIELD_INVALID_LABELLED = "[label] is invalid."
+[% LOCALE de %]
 
-[% LOCALE xx %] # for testing only
+FIELD_REQUIRED_GENERIC  = "Dies ist ein Pflichtfeld."
+FIELD_REQUIRED_LABELLED = "[1] ist ein Pflichtfeld."
 
-[% START FIELD_REQUIRED_GENERIC %]
-C'est une zone exigée.
-[% END FIELD_REQUIRED_GENERIC %]
+# ganze Sätze oder nur "Wert unvollständig/ungültig"?
+FIELD_PARTIAL_VALUE    = "Der Wert ist unvollständig."
+FIELD_INVALID_GENERIC  = "Der Wert ist ungültig."
+FIELD_INVALID_LABELLED = "[label] ist ungültig."
 
-FIELD_REQUIRED_LABELLED = "[1] est une zone exigée."
+[% LOCALE fr %]
+
+FIELD_REQUIRED_GENERIC  = "Ce champ est obligatoire."
+FIELD_REQUIRED_LABELLED = "[1] est un champ obligatoire."
+
+FIELD_PARTIAL_VALUE     = "Valeur incomplète."
+FIELD_INVALID_GENERIC   = "Valeur invalide."
+FIELD_INVALID_LABELLED  = "[label] est invalide."
 
 __END__
 

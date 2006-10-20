@@ -7,7 +7,7 @@ use Rose::HTML::Object::Errors qw(:phone);
 use Rose::HTML::Form::Field::Text;
 our @ISA = qw(Rose::HTML::Form::Field::Text);
 
-our $VERSION = '0.52';
+our $VERSION = '0.541';
 
 __PACKAGE__->add_required_html_attrs(
 {
@@ -49,6 +49,11 @@ sub inflate_value
 
 *deflate_value = \&inflate_value;
 
+if(__PACKAGE__->localizer->auto_load_messages)
+{
+  __PACKAGE__->localizer->load_all_messages;
+}
+
 1;
 
 __DATA__
@@ -56,6 +61,14 @@ __DATA__
 [% LOCALE en %]
 
 PHONE_INVALID = "Phone number must be 10 digits, including area code."
+
+[% LOCALE de %]
+
+PHONE_INVALID = "Die Telefon-Nummer muß 10 Stellen enthalten (einschließlich Vorwahl)."
+
+[% LOCALE fr %]
+
+PHONE_INVALID = "Le numéro de téléphone, indicatif compris, doit avoir 10 chiffres."
 
 __END__
 

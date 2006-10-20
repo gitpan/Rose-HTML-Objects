@@ -99,6 +99,7 @@ t/form-nested.t
 t/form.t
 t/image.t
 t/label.t
+t/localized-messages
 t/lib/MyField.pm
 t/lib/MyObject.pm
 t/lib/MyObject/BadErrors.pm
@@ -110,6 +111,7 @@ t/lib/MyObject/Messages.pm
 t/lib/MyObject/Messages2.pm
 t/lib/MyObject2.pm
 t/link.t
+t/localizer-auto-load-messages.t
 t/logo.png
 t/msgs.txt
 t/object-l10n.t

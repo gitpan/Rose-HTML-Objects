@@ -18,7 +18,7 @@ use Rose::Object::MakeMethods::Generic
   ]
 );
 
-our $VERSION = '0.50';
+our $VERSION = '0.541';
 
 sub build_field
 {
@@ -235,6 +235,11 @@ sub validate
   return $ret;
 }
 
+if(__PACKAGE__->localizer->auto_load_messages)
+{
+  __PACKAGE__->localizer->load_all_messages;
+}
+
 1;
 
 __DATA__
@@ -242,6 +247,15 @@ __DATA__
 [% LOCALE en %]
 
 DATE_MIN_GREATER_THAN_MAX = "The min date cannot be later than the max date."
+
+[% LOCALE de %]
+
+# von/bis oder doch min/max?
+DATE_MIN_GREATER_THAN_MAX = "Das Von-Datum darf nicht größer sein, als das Bis-Datum."
+
+[% LOCALE fr %]
+
+DATE_MIN_GREATER_THAN_MAX = "La date min ne peut pas être postérieure à la date max."
 
 __END__
 
