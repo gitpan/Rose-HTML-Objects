@@ -3,7 +3,7 @@ package Rose::HTML::Objects;
 use strict;
 
 # The sole purpose of this module is to provide a version number
-our $VERSION = '0.543';
+our $VERSION = '0.544';
 
 1;
 
@@ -60,6 +60,10 @@ L<http://lists.sourceforge.net/lists/listinfo/rose-html-objects>
 Although the mailing list is the preferred support mechanism, you can also email the author (see below) or file bugs using the CPAN bug tracking system:
 
 L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Rose-HTML-Objects>
+
+=head1 CONTRIBUTORS
+
+Uwe Voelker, Jacques Supcik, Cees Hek
 
 =head1 AUTHOR
 
