@@ -15,7 +15,7 @@ use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 # Variables for use in regexes
 our $FF_SEPARATOR_RE = quotemeta FF_SEPARATOR;
 
-our $VERSION = '0.54';
+our $VERSION = '0.545';
 
 #
 # Class data
@@ -80,6 +80,9 @@ __PACKAGE__->field_type_classes
   'password'           => 'Rose::HTML::Form::Field::Password',
 
   'hidden'             => 'Rose::HTML::Form::Field::Hidden',
+
+  'int'                => 'Rose::HTML::Form::Field::Integer',
+  'integer'            => 'Rose::HTML::Form::Field::Integer',
 
   'email'              => 'Rose::HTML::Form::Field::Email',
 
@@ -305,6 +308,12 @@ sub add_fields
 
       $field->local_name($field->name);
 
+      if($self->can('form') && $self->form($field->local_name))
+      {
+        Carp::croak "Cannot add field with the same name as an existing sub-form: ", 
+                    $field->local_name;
+      }
+
       unless(defined $field->rank)
       {
         $field->rank($self->increment_field_rank_counter);
@@ -316,6 +325,11 @@ sub add_fields
     else
     {
       my $field = shift;
+
+      if($self->can('form') && $self->form($arg))
+      {
+        Carp::croak "Cannot add field with the same name as an existing sub-form: $arg";
+      }
 
       if(UNIVERSAL::isa($field, 'Rose::HTML::Form::Field'))
       {
@@ -370,6 +384,25 @@ sub children
   return wantarray ? shift->fields() : (shift->fields() || []);
 }
 
+sub subfield_names
+{
+  my($self) = shift;
+
+  my @names;
+
+  foreach my $field ($self->fields)
+  {
+    push(@names, $field->name, ($field->can('_subfield_names') ? $field->_subfield_names : ()));
+  }
+
+  return wantarray ? @names : \@names;
+}
+
+sub _subfield_names
+{
+  map { $_->can('subfield_names') ? $_->subfield_names : $_->name } shift->fields;
+}
+
 sub fields
 {
   my($self) = shift;
@@ -384,6 +417,12 @@ sub fields
   $self->{'field_list'} = [ grep { defined } map { $fields->{$_} } $self->field_monikers ];
 
   return wantarray ? @{$self->{'field_list'}} : $self->{'field_list'};
+}
+
+sub num_fields
+{
+  my $fields = shift->fields;
+  return $fields && @$fields ? scalar @$fields : 0;
 }
 
 sub field_monikers
