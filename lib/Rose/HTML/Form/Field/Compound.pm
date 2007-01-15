@@ -13,7 +13,7 @@ our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.541';
+our $VERSION = '0.546';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -261,7 +261,7 @@ sub validate
       no warnings 'uninitialized';
       unless(length $field->input_value_filtered)
       {
-        push(@missing, sub { $field->label || $field->local_name });
+        push(@missing, sub { $field->error_label || $field->local_name });
       }
     }
 
@@ -663,6 +663,16 @@ Returns the full list of field objects, sorted by field name, in list context, o
 
 Returns a sorted list of field names in list context, or a reference to a list of the same in scalar context.
 
+=item B<field_value NAME>
+
+Returns the L<internal_value|Rose::HTML::Form::Field/internal_value> of the sub-field named NAME.  In other words, this:
+
+    $val = $field->field_value('zip_code');
+
+is just a shorter way to write this:
+
+    $val = $field->field('zip_code')->internal_value;
+
 =item B<invalidate_value>
 
 Invalidates the field's value, and the value of all of its parent fields, and so on.  This will cause the field's values to be recreated the next time they are retrieved.
@@ -711,4 +721,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2007 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

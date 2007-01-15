@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 159;
+use Test::More tests => 167;
 
 BEGIN 
 {
@@ -83,6 +83,26 @@ is($address_form->form_name, 'address', 'address form name 1');
 
 my $field = $form->field('person.bday');
 is(ref $field, 'Rose::HTML::Form::Field::DateTime::Split::MonthDayYear', 'person.bday field 1');
+
+$form->params(
+{
+  'person.name'    => 'John', 
+  'person.age'     => ' 10 ', 
+  'person.gender'  => 'm', 
+  'person.bday'    => '1/2/1983',
+  'address.street' => '1 Main St.', 
+  'address.city'   => 'Smithtown', 
+  'address.state'  => ' NY ', 
+  'address.zip'    => 11787  
+});
+
+is($form->form('person')->param('person.name'), 'John', 'shared params 1');
+is($form->form('address')->param('person.name'), 'John', 'shared params 2');
+
+$form->delete_params;
+
+is($form->form('person')->param('person.name'), undef, 'shared params 3');
+is($form->form('address')->param('person.name'), undef, 'shared params 4');
 
 $form->params(
 {
@@ -208,6 +228,16 @@ is($form->field('person_address.address.street')->internal_value, '1 Main St.', 
 is($form->field('person_address.address.city')->internal_value, 'Smithtown', 'person_address_dog city 1');
 is($form->field('person_address.address.state')->internal_value, 'NY', 'person_address_dog state 1');
 is($form->field('person_address.address.zip')->internal_value, '11787', 'person_address_dog zip 1');
+
+ok($person_address_form->validate, 'validate() 1');
+ok($person_address_form->validate(cascade => 0), 'validate() 2');
+
+$person_address_form->field('person_address.address.zip')->input_value(666);
+
+ok(!$person_address_form->validate, 'validate() 3');
+ok($person_address_form->validate(cascade => 0), 'validate() 4');
+
+$person_address_form->field('person_address.address.zip')->input_value(11787);
 
 $person = $form->person_from_form;
 
@@ -452,6 +482,30 @@ $f1->add_form(f2 => $f2);
 
 is(join(',', sort map { $_->name } $f1->fields), 'f2.id,id', 'nested same-name fields');
 
+$form = Rose::HTML::Form->new;
+$form->add_field(foo => { type => 'text' });
+
+my $subform = Rose::HTML::Form->new;
+$subform->add_field(bar => { type => 'text' });
+
+$form->add_form(sub => $subform);
+#local $Rose::HTML::Form::Debug = 1;
+# Call validate() on fields "foo" and "sub.bar" and
+# call validate(form_only => 1) on the sub-form "sub"
+$form->validate;
+#print STDERR "---\n";
+# Same as above
+$form->validate(cascade => 1);
+#print STDERR "---\n";
+# Call validate() on fields "foo" and "sub.bar"
+$form->validate(cascade => 0);
+#print STDERR "---\n";
+# Call validate(form_only => 1) on the sub-form "sub"
+$form->validate(form_only => 1);
+#print STDERR "---\n";
+# Don't call validate() on any fields or sub-forms
+$form->validate(form_only => 1, cascade => 0);
+
 BEGIN
 {
   package MyPerson;
@@ -540,6 +594,14 @@ BEGIN
         size => 2);
 
     $self->add_fields(%fields);
+  }
+  
+  sub validate
+  {
+    my($self) = shift;
+    
+    $self->SUPER::validate or return 0;
+    return ($self->field('zip')->internal_value == 666) ? 0 : 1;
   }
 
   sub address_from_form { shift->object_from_form('MyAddress') }

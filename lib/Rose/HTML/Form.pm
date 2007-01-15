@@ -15,7 +15,7 @@ use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.545';
+our $VERSION = '0.546';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -201,7 +201,8 @@ sub _set_input_value { }
 sub is_full  { 0 }
 sub is_empty { 0 }
 
-sub delete_params { shift->{'params'} = {} }
+# Empty contents instead of replacing ref
+sub delete_params { %{shift->{'params'}} = () }
 
 sub params_from_cgi
 {
@@ -331,6 +332,11 @@ sub params
         delete $self->{'params'}{$param};
         $self->{'params'}{$1} = 1;
       }
+    }
+
+    foreach my $form ($self->forms)
+    {
+      $form->params($self->{'params'});
     }
   }
 
@@ -576,14 +582,35 @@ sub query_string
 
 sub validate
 {
-  my($self) = shift;
+  my($self, %args) = @_;
+
+  $args{'cascade'} = 1  unless(exists $args{'cascade'});
 
   my $fail = 0;
 
-  foreach my $field ($self->fields)
+  if($args{'cascade'})
   {
-    $Debug && warn "Validating ", $field->name, "\n";
-    $fail++  unless($field->validate);
+    foreach my $form ($self->forms)
+    {
+      $Debug && warn "Validating sub-form ", $form->form_name, "\n";
+
+      local $args{'form_only'} = 1;
+
+      unless($form->validate(%args))
+      {
+        $self->add_error($form->error)  if($form->error);
+        $fail++;
+      }
+    }
+  }
+
+  unless($args{'form_only'})
+  {
+    foreach my $field ($self->fields)
+    {
+      $Debug && warn "Validating ", $field->name, "\n";
+      $fail++  unless($field->validate);
+    }
   }
 
   if($fail)
@@ -595,6 +622,7 @@ sub validate
 
     return 0;
   }
+
   return 1;
 }
 
@@ -1142,8 +1170,6 @@ sub delete_field
   return $field1 || $field2;
 }
 
-sub field_value { shift->field(shift)->internal_value }
-
 sub field
 {
   my($self, $name) = (shift, shift);
@@ -1307,6 +1333,25 @@ sub fq_form_name
   }
 
   return @parts ? join(FF_SEPARATOR, @parts) : '';
+}
+
+sub form_name_context
+{
+  my($self) = shift;
+
+  return undef  unless($self->parent_form);
+
+  my @context;
+  my $form = $self;
+
+  for(;;)
+  {
+    last  unless($form->parent_form);
+    unshift(@context, $form->form_name);
+    $form = $form->parent_form;
+  }
+
+  return join(FF_SEPARATOR, @context) . FF_SEPARATOR;
 }
 
 sub local_form
@@ -2529,11 +2574,51 @@ Get or set the URI of the form, minus the value of the "action" HTML attribute. 
 
 Get or set the character used to separate parameter name/value pairs in the return value of L<query_string()|/query_string> (which is in turn used to construct the return value of L<self_uri()|/self_uri>).  The default is "&".
 
-=item B<validate>
+=item B<validate [PARAMS]>
 
-Validate the form by calling L<validate()|Rose::HTML::Form::Field/validate> on each field.  If any field returns false from its L<validate()|Rose::HTML::Form::Field/validate> call, then this method returns false. Otherwise, it returns true.
+Validate the form by calling L<validate()|Rose::HTML::Form::Field/validate> on each field and L<validate()|/validate> on each each L<sub-form|/"NESTED FORMS">.  If any field or form returns false from its C<validate()> method call, then this method returns false.  Otherwise, it returns true.
 
-If this method returns false and an L<error|Rose::HTML::Object/error> is not defined, then the L<error|Rose::HTML::Object/error> attribute is set to a generic error message.
+If this method returns false and an L<error|Rose::HTML::Object/error> is not defined on any invalid field or form, then the L<error|Rose::HTML::Object/error> attribute of this form is set to a generic error message.  Otherwise, this form's error attribute is set to the error attribute of the last invalid field or form.
+
+PARAMS are name/value pairs.  Valid parameters are:
+
+=over 4
+
+=item C<cascade BOOL>
+
+If true, then the L<validate()|/validate> method of each sub-form is called, passing PARAMS, with a C<form_only> parameter set to true.  The default value of the C<cascade> parameter is true.  Note that all fields in all nested forms are validated regardless of the value of this parameter.
+
+=item C<form_only BOOL>
+
+If true, then the  L<validate|Rose::HTML::Form::Field/validate> method is not called on the fields of this form and its sub-forms.  Defaults to false, but is set to true when calling  L<validate()|/validate> on sub-forms in response to the C<cascade> parameter.
+
+=back
+
+Examples:
+
+    $form = Rose::HTML::Form->new;
+    $form->add_field(foo => { type => 'text' });
+
+    $subform = Rose::HTML::Form->new;
+    $subform->add_field(bar => { type => 'text' });
+
+    $form->add_form(sub => $subform);
+
+    # Call validate() on fields "foo" and "sub.bar" and
+    # call validate(form_only => 1) on the sub-form "sub"
+    $form->validate;
+
+    # Same as above
+    $form->validate(cascade => 1);
+
+    # Call validate() on fields "foo" and "sub.bar"
+    $form->validate(cascade => 0);
+
+    # Call validate(form_only => 1) on the sub-form "sub"
+    $form->validate(form_only => 1);
+
+    # Don't call validate() on any fields or sub-forms
+    $form->validate(form_only => 1, cascade => 0);
 
 =item B<validate_field_html_attrs [BOOL]>
 
@@ -2561,4 +2646,4 @@ John C. Siracusa (siracusa@mindspring.com)
 
 =head1 COPYRIGHT
 
-Copyright (c) 2006 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2007 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
