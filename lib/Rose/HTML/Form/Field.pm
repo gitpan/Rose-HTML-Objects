@@ -19,7 +19,7 @@ use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.547';
+our $VERSION = '0.548';
 
 #our $Debug = 0;
 
@@ -62,7 +62,7 @@ __PACKAGE__->add_valid_html_attrs(qw(
 sub error_label
 {
   my($self) = shift;
-  
+
   if(@_)
   {
     return $self->_error_label(@_);
@@ -77,7 +77,7 @@ sub error_label
 sub error_label_id
 {
   my($self) = shift;
-  
+
   if(@_)
   {
     return $self->_error_label_message_id(@_);
@@ -444,7 +444,7 @@ sub output_value
 sub is_empty
 {
   my($self) = shift;
-  
+
   my $value = $self->internal_value;
 
   no warnings;  
@@ -590,11 +590,46 @@ sub xhtml_hidden_fields
 
 sub xhtml_hidden_field { shift->xhtml_hidden_fields(@_) }
 
+sub html_tag
+{
+  my($self) = shift;
+
+  if(defined $self->error)
+  {
+    my $class = $self->html_attr('class');
+    $self->html_attr(class => $class ? "$class error" : 'error');
+
+    my $html = $self->html_field(@_);
+    $self->html_attr(class => $class);
+    return $html;
+  }
+  else
+  {
+    $self->html_field(@_);
+  }
+}
+
+sub xhtml_tag
+{
+  my($self) = shift;
+
+  if(defined $self->error)
+  {
+    my $class = $self->html_attr('class');
+    $self->html_attr(class => $class ? "$class error" : 'error');
+
+    my $html = $self->xhtml_field(@_);
+    $self->html_attr(class => $class);
+    return $html;
+  }
+  else
+  {
+    $self->xhtml_field(@_);
+  }
+}
+
 *html_field  = \&Rose::HTML::Object::html_tag;
 *xhtml_field = \&Rose::HTML::Object::xhtml_tag;
-
-sub html_tag  { shift->html_field(@_) }
-sub xhtml_tag { shift->xhtml_field(@_) }
 
 sub html
 {
@@ -648,6 +683,17 @@ sub label_object
     $label->for($self->html_attr('id'));
   }
 
+  my @classes = 
+  (
+    ($self->required ? 'required' : ()),
+    (defined $self->error ? 'error' : ()),
+  );
+
+  if(@classes)
+  {
+    $label->html_attr(class => "@classes");
+  }
+
   if(@_)
   {
     my %args = @_;
@@ -664,15 +710,21 @@ sub label_object
 sub html_label
 {
   my($self) = shift;
+  no warnings 'uninitialized';
   return ''  unless(length $self->label);
-  return $self->label_object(($self->required ? (class => 'required') : ()), @_)->html_tag;
+  return $self->label_object(@_)->html_tag;
 }
 
 sub xhtml_label
 {
   my($self) = shift;
+  no warnings 'uninitialized';
   return ''  unless(length $self->label);
-  return $self->label_object(($self->required ? (class => 'required') : ()), @_)->xhtml_tag;
+if($self->name =~ /expire/)
+{
+$DB::single = 1;
+}
+  return $self->label_object(@_)->xhtml_tag;
 }
 
 sub validate
@@ -888,6 +940,8 @@ sub locale
     return $invocant->default_locale;
   }
 }
+
+sub prepare { }
 
 if(__PACKAGE__->localizer->auto_load_messages)
 {
@@ -1280,6 +1334,24 @@ Get or set the parent field.  The parent field should only be set if the direct 
 =item B<parent_form [FORM]>
 
 Get or set the parent L<form|Rose::HTML::Form>.  The parent form should only be set if the direct parent of this field is a form.  The reference to the parent form is "weakened" using L<Scalar::Util::weaken()|Scalar::Util/weaken> in order to avoid memory leaks caused by circular references.
+
+=item B<prepare>
+
+Prepares the field for use in a form.  Override this method in your custom field subclass to do any work required for each field before each use of that field.  Be sure to call the superclass implementation as well.  Example:
+
+    package MyField;
+    use base 'Rose::HTML::Form::Field';
+    ...
+    sub prepare
+    {
+      my($self) = shift;
+
+      # Do anything that needs to be done before each use of this field
+      ...
+
+      # Call superclass implementation
+      $self->SUPER::prepare(@_);
+    }
 
 =item B<rank [INT]>
 

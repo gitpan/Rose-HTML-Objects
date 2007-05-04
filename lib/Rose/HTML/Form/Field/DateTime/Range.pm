@@ -15,10 +15,13 @@ use Rose::Object::MakeMethods::Generic
   'scalar --get_set_init' => 
   [
     'range_separator_regex',
+    'min_prefix_html',
+    'max_prefix_html',
+    'separator_html',
   ]
 );
 
-our $VERSION = '0.541';
+our $VERSION = '0.548';
 
 sub build_field
 {
@@ -28,18 +31,18 @@ sub build_field
   (
     min => 
     {
-      type      => 'datetime start',
-      label     => 'minimum date',
-      size      => 21,
-      maxlength => 25,
+      type        => 'datetime start',
+      error_label => 'minimum date',
+      size        => 21,
+      maxlength   => 25,
     },
 
     max =>
     {
-      type      => 'datetime end',
-      label     => 'minimum date',
-      size      => 21,
-      maxlength => 25,
+      type        => 'datetime end',
+      error_label => 'maximum date',
+      size        => 21,
+      maxlength   => 25,
     },
   );
 }
@@ -155,13 +158,17 @@ sub inflate_value
   }
 }
 
+sub init_min_prefix_html { '' }
+sub init_max_prefix_html { '' }
+sub init_separator_html { ' - ' }
+
 sub html_field
 {
   my($self) = shift;
 
   return '<span class="date-range">' .
-         $self->field('min')->html_field . ' - ' .
-         $self->field('max')->html_field .
+         $self->field('min')->html_label . $self->min_prefix_html . $self->field('min')->html_field . $self->separator_html .
+         $self->field('max')->html_label . $self->max_prefix_html . $self->field('max')->html_field .
          '</span>';
 }
 
@@ -170,8 +177,8 @@ sub xhtml_field
   my($self) = shift;
 
   return '<span class="date-range">' .
-         $self->field('min')->xhtml_field . ' - ' .
-         $self->field('max')->xhtml_field .
+         $self->field('min')->xhtml_label . $self->min_prefix_html . $self->field('min')->xhtml_field . $self->separator_html .
+         $self->field('max')->xhtml_label . $self->max_prefix_html . $self->field('max')->xhtml_field .
          '</span>';
 }
 
@@ -179,10 +186,10 @@ sub html
 {
   my($self) = shift;
 
-  return '<table class="date-range" cellpadding="0" cellspacing="0">' .
-         '<tr valign="baseline"><td class="min">' .
-         $self->field('min')->html . '</td><td> - </td><td class="max">' .
-         $self->field('max')->html . '</td></tr>' .
+  return '<table class="date-range">' .
+         '<tr><td class="min">' .
+         $self->field('min')->html_label . $self->min_prefix_html . $self->field('min')->html . '</td><td>' . $self->separator_html . '</td><td class="max">' .
+         $self->field('max')->html_label . $self->max_prefix_html . $self->field('max')->html . '</td></tr>' .
          ($self->has_errors ? '<tr><td colspan="3">' . $self->html_errors . '</td></tr>' : '') .
          '</table>';
 }
@@ -191,10 +198,10 @@ sub xhtml
 {
   my($self) = shift;
 
-  return '<table class="date-range" cellpadding="0" cellspacing="0">' .
-         '<tr valign="baseline"><td class="min">' .
-         $self->field('min')->xhtml . '</td><td> - </td><td class="max">' .
-         $self->field('max')->xhtml . '</td></tr>' .
+  return '<table class="date-range">' .
+         '<tr><td class="min">' .
+         $self->field('min')->xhtml_label . $self->min_prefix_html . $self->field('min')->xhtml . '</td><td>' . $self->separator_html . '</td><td class="max">' .
+         $self->field('max')->xhtml_label . $self->max_prefix_html . $self->field('max')->xhtml . '</td></tr>' .
          ($self->has_errors ? '<tr><td colspan="3">' . $self->xhtml_errors . '</td></tr>' : '') .
          '</table>';
 }

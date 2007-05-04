@@ -6,7 +6,7 @@ use Carp;
 
 use Clone::PP;
 use Rose::URI;
-use Scalar::Util qw(refaddr);
+use Scalar::Util();
 use URI::Escape qw(uri_escape);
 
 use Rose::HTML::Object::Errors qw(:form);
@@ -15,7 +15,7 @@ use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.547';
+our $VERSION = '0.548';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -39,6 +39,7 @@ __PACKAGE__->add_valid_html_attrs
   'onsubmit',       # %Script;       #IMPLIED  -- the form was submitted --
   'onreset',        # %Script;       #IMPLIED  -- the form was reset --
   'accept-charset', # %Charsets;     #IMPLIED  -- list of supported charsets --
+  'target',         # http://www.w3.org/TR/xhtml-modularization/abstract_modules.html#s_targetmodule
 );
 
 __PACKAGE__->add_required_html_attrs(
@@ -674,7 +675,7 @@ sub _init_field
   $Debug && warn "INIT FIELD $name ($name_attr)\n";
 
   my $name_exists       = $self->param_exists($name);
-  my $moniker_exists = $self->param_exists($moniker);
+  my $moniker_exists    = $self->param_exists($moniker);
   my $name_attr_exists  = $self->param_exists($name_attr);
 
   if(!$name_exists && $field->isa('Rose::HTML::Form::Field::Compound'))
@@ -712,7 +713,8 @@ sub _init_field
       # Must handle lone checkboxes and radio buttons here
       if($on_off)
       {
-        if($self->param($name) eq $field->html_attr('value'))
+        no warnings 'uninitialized';
+        if($name_exists && $self->param($name) eq $field->html_attr('value'))
         {
           $Debug && warn "$self->param($name) = checked\n";
           $field->checked(1);
@@ -760,6 +762,18 @@ sub _init_field
     $parent->is_cleared(0);
     $parent = $parent->parent_field;
   }
+}
+
+sub was_submitted
+{
+  my($self) = shift;
+
+  foreach my $field ($self->fields)
+  {
+    return 1  if($self->param_exists_for_field($field->name));
+  }
+
+  return 0;
 }
 
 sub start_html
@@ -922,7 +936,7 @@ sub add_forms
     {
       $form = $arg;
 
-      if(refaddr($form) eq refaddr($self))
+      if(Scalar::Util::refaddr($form) eq Scalar::Util::refaddr($self))
       {
         croak "Cannot nest a form within itself";
       }
@@ -947,7 +961,7 @@ sub add_forms
 
       if(UNIVERSAL::isa($form, 'Rose::HTML::Form'))
       {
-        if(refaddr($form) eq refaddr($self))
+        if(Scalar::Util::refaddr($form) eq Scalar::Util::refaddr($self))
         {
           croak "Cannot nest a form within itself";
         }
@@ -1394,6 +1408,20 @@ sub form
   return $parent_form->form($local_name);
 }
 
+sub app
+{
+  my($self) = shift; 
+  return Scalar::Util::weaken($self->{'app'} = shift)  if(@_);
+  return $self->{'app'};
+}
+
+sub app_form
+{
+  my($self) = shift; 
+  return Scalar::Util::weaken($self->{'app_form'} = shift)  if(@_);
+  return $self->{'app_form'};
+}
+
 our $AUTOLOAD;
 
 sub AUTOLOAD
@@ -1715,6 +1743,7 @@ Valid attributes:
     onsubmit
     style
     tabindex
+    target
     title
     value
     xml:lang
@@ -2139,15 +2168,25 @@ The default mapping of type names to class names is:
   'datetime split mdyhms' => 
     Rose::HTML::Form::Field::DateTime::Split::MDYHMS
 
-=item B<field_value NAME>
+=item B<field_value NAME [, VALUE]>
 
-Returns the L<internal_value|Rose::HTML::Form::Field/internal_value> of the field named NAME.  In other words, this:
+If passed NAME and VALUE arguments, then the L<input_value|Rose::HTML::Form::Field/input_value> of the field named NAME is set to VALUE.  If passed only a NAME, then the L<internal_value|Rose::HTML::Form::Field/internal_value> of the field named NAME is returned.  In other words, this:
+
+    $form->field_value(zip_code => '11787');
+
+is equivalent to this:
+
+    $form->field('zip_code')->input_value('11787');
+
+and this:
 
     $val = $form->field_value('zip_code');
 
-is just a shorter way to write this:
+is equivalent to this:
 
     $val = $form->field('zip_code')->internal_value;
+
+If no field named NAME exists, a fatal error will occur.
 
 =item B<form NAME [, OBJECT]>
 
@@ -2533,6 +2572,10 @@ A fatal error occurs unless both NAME and VALUE arguments are passed.
 
 Get or set the parent form, if any.  The reference to the parent form is "weakened" using L<Scalar::Util::weaken()|Scalar::Util/weaken> in order to avoid memory leaks caused by circular references.
 
+=item B<prepare>
+
+Calls L<prepare|Rose::HTML::Form::Field/prepare> on each L<field|/fields>, passing all arguments.
+
 =item B<query_string>
 
 Returns a URI-escaped (but I<not> HTML-escaped) query string that corresponds to the current state of the form.  If L<coalesce_query_string_params()|/coalesce_query_string_params> is true (which is the default), then compound fields are represented by a single query parameter.  Otherwise, the subfields of each compound field appear as separate query parameters.
@@ -2632,6 +2675,10 @@ Examples:
 =item B<validate_field_html_attrs [BOOL]>
 
 Get or set a boolean flag that indicates whether or not the fields of this form will validate their HTML attributes.  If a BOOL argument is passed, then it is passed as the argument to a call to L<validate_html_attrs()|Rose::HTML::Object/validate_html_attrs> on each field.  In either case, the current value of this flag is returned.
+
+=item B<was_submitted>
+
+Returns true id L<params exist|/param_exists_for_field> for any L<field|/fields>, false otherwise.
 
 =item B<xhtml_hidden_fields>
 

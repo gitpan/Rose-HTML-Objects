@@ -10,7 +10,7 @@ use Rose::HTML::Form::Field::Group;
 use Rose::HTML::Form::Field::Group::OnOff;
 our @ISA = qw(Rose::HTML::Form::Field::Group::OnOff);
 
-our $VERSION = '0.545';
+our $VERSION = '0.548';
 
 sub _item_class       { 'Rose::HTML::Form::Field::RadioButton' }
 sub _item_name        { 'radio button' }
@@ -27,6 +27,13 @@ sub _item_name_plural { 'radio buttons' }
 
 *choices           = \&radio_buttons;
 *choices_localized = \&radio_buttons_localized;
+
+sub internal_value
+{
+  my($self) = shift;
+  my($value) =  $self->SUPER::internal_value(@_);
+  return $value;
+}
 
 sub html_table
 {
@@ -120,7 +127,79 @@ Convenience alias for L<add_radio_buttons()|/add_radio_buttons>.
 
 =item B<add_radio_buttons RADIO_BUTTONS>
 
-Adds radio buttons to the radio button group.  RADIO_BUTTONS may be a reference to a hash of value/label pairs, an ordered list of value/label pairs, a reference to an array of values, or a list of L<Rose::HTML::Form::Field::RadioButton> objects. Passing an odd number of items in the value/label argument list causes a fatal error. Radio button values and labels passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function. Radio buttons are added to the end of the existing list of radio buttons.
+Adds radio buttons to the radio button group.  RADIO_BUTTONS may take the following forms.
+
+A reference to a hash of value/label pairs:
+
+    $field->add_radio_buttons
+    (
+      {
+        value1 => 'label1',
+        value2 => 'label2',
+        ...
+      }
+    );
+
+An ordered list of value/label pairs:
+
+    $field->add_radio_buttons
+    (
+      value1 => 'label1',
+      value2 => 'label2',
+      ...
+    );
+
+(Radio button values and labels passed as a hash reference are sorted by value according to the default behavior of Perl's built-in L<sort()|perlfunc/sort> function.)
+
+A reference to an array of containing B<only> plain scalar values:
+
+    $field->add_radio_buttons([ 'value1', 'value2', ... ]);
+
+A list or reference to an array of L<Rose::HTML::Form::Field::RadioButton> objects:
+
+    $field->add_radio_buttons
+    (
+      Rose::HTML::Form::Field::RadioButton->new(...),
+      Rose::HTML::Form::Field::RadioButton->new(...),
+      ...
+    );
+
+    $field->add_radio_buttons
+    (
+      [
+        Rose::HTML::Form::Field::RadioButton->new(...),
+        Rose::HTML::Form::Field::RadioButton->new(...),
+        ...
+      ]
+    );
+
+A list or reference to an array containing a mix of value/label pairs, value/hashref pairs, and L<Rose::HTML::Form::Field::RadioButton> objects:
+
+    @args = 
+    (
+      # value/label pair
+      value1 => 'label1',
+
+      # value/hashref pair
+      value2 =>
+      {
+        label => 'Some Label',
+        id    => 'my_id',
+        ...
+      },
+
+      # object
+      Rose::HTML::Form::Field::RadioButton->new(...),
+
+      ...
+    );
+
+    $field->add_radio_buttons(@args);  # list
+    $field->add_radio_buttons(\@args); # reference to an array
+
+All radio buttons are added to the end of the existing list of radio buttons.
+
+B<Please note:> the second form (passing a reference to an array) requires that at least one item in the referenced array is not a plain scalar, lest it be confused with "a reference to an array of containing only plain scalar values."
 
 =item B<choices [RADIO_BUTTONS]>
 
@@ -197,6 +276,10 @@ To remove HTML attributes that have default values, simply pass undef as the val
     # <table>
     # <tr>
     # <td>...
+
+=item B<internal_value>
+
+The selected value is returned (or undef if no value is selected).
 
 =item B<labels [LABELS]>
 

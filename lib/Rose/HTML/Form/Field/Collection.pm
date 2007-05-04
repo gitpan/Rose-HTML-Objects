@@ -15,7 +15,7 @@ use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 # Variables for use in regexes
 our $FF_SEPARATOR_RE = quotemeta FF_SEPARATOR;
 
-our $VERSION = '0.546';
+our $VERSION = '0.548';
 
 #
 # Class data
@@ -129,6 +129,16 @@ use Rose::Object::MakeMethods::Generic
 #
 # Class methods
 #
+
+sub prepare
+{
+  my($self) = shift;
+
+  foreach my $field ($self->fields)
+  {
+    $field->prepare(@_);
+  }
+}
 
 sub field_type_class 
 {
@@ -384,7 +394,16 @@ sub children
   return wantarray ? shift->fields() : (shift->fields() || []);
 }
 
-sub field_value { shift->field(shift)->internal_value }
+sub field_value
+{
+  my($self, $name) = (shift, shift);
+
+  my $field = $self->field($name) 
+    or Carp::croak "No field named '$name' in $self";
+
+  return $field->input_value(@_)  if(@_);
+  return $field->internal_value;
+}
 
 *subfield_value = \&field_value;
 

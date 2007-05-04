@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 43;
+use Test::More tests => 47;
 
 BEGIN 
 {
@@ -18,8 +18,11 @@ is(scalar @{ $field->children }, 0, 'children scalar 1');
 is(scalar(() = $field->children), 0, 'children list 1');
 
 $field->choices(apple  => 'Apple',
-                orange => 'Orange',
-                grape  => 'Grape');
+                orange => 
+                {
+                  label => 'Orange',
+                },
+                Rose::HTML::Form::Field::RadioButton->new(value => 'grape', label => 'Grape'));
 
 is(scalar @{ $field->children }, 3, 'children scalar 2');
 is(scalar(() = $field->children), 3, 'children list 2');
@@ -31,6 +34,19 @@ is($field->html_field,
   qq(<input name="fruits" type="radio" value="orange"> <label>Orange</label><br>\n) .
   qq(<input name="fruits" type="radio" value="grape"> <label>Grape</label>),
   'html_field() 1');
+
+$field = 
+  Rose::HTML::Form::Field::RadioButtonGroup->new(
+    name => 'fruits',
+    choices =>
+    [
+      Rose::HTML::Form::Field::RadioButton->new(value => 'apple', label => 'Apple'),
+      orange  => 'Orange',
+      grape => 
+      {
+        label => 'Grape',
+      }
+    ]);
 
 is($field->value_label('apple'), 'Apple', 'value_label()');
 
@@ -294,3 +310,32 @@ is($field->html_field,
   qq(<input name="fruits" type="radio" value="squash"> <label>Squash</label><br>\n) .
   qq(<input name="fruits" type="radio" value="cherry"> <label>Cherry</label>),
   'localized label 4');
+
+$field->default('pear');
+$field->input_value('squash');
+
+is($field->internal_value, 'squash', 'internal_value() 1');
+$field->clear;
+$field->reset;
+
+is($field->internal_value, 'pear', 'reset() 1');
+
+is($field->html_field,
+  qq(<input name="fruits" type="radio" value="apple"> <label>Apple</label><br>\n) .
+  qq(<input name="fruits" type="radio" value="orange"> <label>Le Orange</label><br>\n) .
+  qq(<input name="fruits" type="radio" value="grape"> <label>Grape</label><br>\n) .
+  qq(<input checked name="fruits" type="radio" value="pear"> <label>Pear</label><br>\n) .
+  qq(<input name="fruits" type="radio" value="berry"> <label>Berry</label><br>\n) .
+  qq(<input name="fruits" type="radio" value="squash"> <label>Squash</label><br>\n) .
+  qq(<input name="fruits" type="radio" value="cherry"> <label>Cherry</label>),
+  'reset() html 1');
+
+is($field->xhtml_field,
+  qq(<input name="fruits" type="radio" value="apple" /> <label>Apple</label><br />\n) .
+  qq(<input name="fruits" type="radio" value="orange" /> <label>Le Orange</label><br />\n) .
+  qq(<input name="fruits" type="radio" value="grape" /> <label>Grape</label><br />\n) .
+  qq(<input checked="checked" name="fruits" type="radio" value="pear" /> <label>Pear</label><br />\n) .
+  qq(<input name="fruits" type="radio" value="berry" /> <label>Berry</label><br />\n) .
+  qq(<input name="fruits" type="radio" value="squash" /> <label>Squash</label><br />\n) .
+  qq(<input name="fruits" type="radio" value="cherry" /> <label>Cherry</label>),
+  'reset() xhtml 1');
