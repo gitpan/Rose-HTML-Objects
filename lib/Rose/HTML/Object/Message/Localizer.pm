@@ -12,7 +12,7 @@ use Rose::HTML::Object::Messages();
 use Rose::Object;
 our @ISA = qw(Rose::Object);
 
-our $VERSION = '0.542';
+our $VERSION = '0.549';
 
 our $Debug = 0;
 
@@ -259,6 +259,18 @@ sub localized_message_exists
   }
 
   return 0;
+}
+
+sub locales_for_message_name
+{
+  my($self, $name) = @_;
+
+  my $msgs = $self->localized_messages_hash;
+
+  return wantarray ? () : []  unless(ref $msgs->{$name});
+
+  return wantarray ? (sort keys %{$msgs->{$name}}) :
+                     [ sort keys %{$msgs->{$name}} ];
 }
 
 sub add_localized_message_text
@@ -683,7 +695,6 @@ sub load_messages_from_fh
           s/\A(\s*\n)+//;
           s/(\s*\n)+\z//;
         }
-
         $self->add_localized_message_text(name   => $in_msg,
                                           locale => $in_locale,
                                           text   => $text);
@@ -710,7 +721,7 @@ sub load_messages_from_fh
         for($text)
         {
           s/\\n/\n/g;
-          s/\\(.)/$1/g;
+          s/\\([^\[])/$1/g;
         }
 
         $self->add_localized_message_text(name   => $name,
@@ -726,7 +737,7 @@ sub load_messages_from_fh
     elsif(!/$Comment_Or_Blank/)
     {
       chomp;
-      warn "WARNING: Localized message line not understood: $_";
+      carp "WARNING: Localized message line not understood: $_";
     }
   }
 

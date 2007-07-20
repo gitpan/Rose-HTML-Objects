@@ -7,7 +7,7 @@ use Rose::HTML::Object::Errors qw(:phone);
 use Rose::HTML::Form::Field::Text;
 our @ISA = qw(Rose::HTML::Form::Field::Text);
 
-our $VERSION = '0.541';
+our $VERSION = '0.549';
 
 __PACKAGE__->add_required_html_attrs(
 {
@@ -70,6 +70,10 @@ PHONE_INVALID = "Die Telefon-Nummer muß 10 Stellen enthalten (einschließlich V
 
 PHONE_INVALID = "Le numéro de téléphone, indicatif compris, doit avoir 10 chiffres."
 
+[% LOCALE bg %]
+
+PHONE_INVALID = "Телефонния номер (вкл. кода на областта) не трябва да надвишава 10 цифри."
+
 __END__
 
 =head1 NAME
@@ -104,7 +108,7 @@ This is a good example of a custom field class that constrains the kinds of inpu
 
 =head1 AUTHOR
 
-John C. Siracusa (siracusa@mindspring.com)
+John C. Siracusa (siracusa@gmail.com)
 
 =head1 COPYRIGHT
 

@@ -7,7 +7,7 @@ use Rose::HTML::Object::Errors qw(:set);
 use Rose::HTML::Form::Field::TextArea;
 our @ISA = qw(Rose::HTML::Form::Field::TextArea);
 
-our $VERSION = '0.541';
+our $VERSION = '0.549';
 
 sub deflate_value
 {
@@ -98,6 +98,11 @@ SET_PARSE_ERROR = "Konnte Eingabe nicht parsen: Fehler bei \[[context]\]"
 SET_INVALID_QUOTED_STRING = "Texte entre guillemets invalide: \"[string]\""
 SET_PARSE_ERROR = "Impossible d'évaluer la saisie : erreur à \[[context]\]"
 
+[% LOCALE bg %]
+
+SET_INVALID_QUOTED_STRING = "Нeвалиден низ в кавички: \"[string]\""
+SET_PARSE_ERROR = "Невъзможна обработка на въведените данни: грешка при \[[context]\]"
+
 __END__
 
 =head1 NAME
@@ -136,7 +141,7 @@ Strings with spaces, double quotes, backslashes, or commas must be double-quoted
 
 =head1 AUTHOR
 
-John C. Siracusa (siracusa@mindspring.com)
+John C. Siracusa (siracusa@gmail.com)
 
 =head1 COPYRIGHT
 

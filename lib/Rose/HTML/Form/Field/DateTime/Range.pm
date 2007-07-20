@@ -4,6 +4,9 @@ use strict;
 
 use Rose::HTML::Object::Errors qw(:date);
 
+use Rose::HTML::Object::Messages 
+  qw(FIELD_ERROR_LABEL_MINIMUM_DATE FIELD_ERROR_LABEL_MAXIMUM_DATE);
+
 use Rose::HTML::Form::Field::DateTime::StartDate;
 use Rose::HTML::Form::Field::DateTime::EndDate;
 
@@ -21,7 +24,7 @@ use Rose::Object::MakeMethods::Generic
   ]
 );
 
-our $VERSION = '0.548';
+our $VERSION = '0.549';
 
 sub build_field
 {
@@ -31,18 +34,18 @@ sub build_field
   (
     min => 
     {
-      type        => 'datetime start',
-      error_label => 'minimum date',
-      size        => 21,
-      maxlength   => 25,
+      type           => 'datetime start',
+      error_label_id => FIELD_ERROR_LABEL_MINIMUM_DATE,
+      size           => 21,
+      maxlength      => 25,
     },
 
     max =>
     {
-      type        => 'datetime end',
-      error_label => 'maximum date',
-      size        => 21,
-      maxlength   => 25,
+      type           => 'datetime end',
+      error_label_id => FIELD_ERROR_LABEL_MAXIMUM_DATE,
+      size           => 21,
+      maxlength      => 25,
     },
   );
 }
@@ -218,8 +221,11 @@ sub validate
 
   foreach my $field (qw(min max))
   {
-    push(@errors, $self->field($field)->errors) 
-      unless($self->field($field)->validate);
+    unless($self->field($field)->validate)
+    {
+      push(@errors, $self->field($field)->errors);
+      $self->field($field)->set_error;
+    }
   }
 
   unless(@errors)
@@ -255,6 +261,9 @@ __DATA__
 
 DATE_MIN_GREATER_THAN_MAX = "The min date cannot be later than the max date."
 
+FIELD_ERROR_LABEL_MINIMUM_DATE = "minimum date"
+FIELD_ERROR_LABEL_MAXIMUM_DATE = "maximum date"
+
 [% LOCALE de %]
 
 # von/bis oder doch min/max?
@@ -263,6 +272,10 @@ DATE_MIN_GREATER_THAN_MAX = "Das Von-Datum darf nicht größer sein, als das Bis
 [% LOCALE fr %]
 
 DATE_MIN_GREATER_THAN_MAX = "La date min ne peut pas être postérieure à la date max."
+
+[% LOCALE bg %]
+
+DATE_MIN_GREATER_THAN_MAX = "Началната дата трябва да бъде преди крайната."
 
 __END__
 
@@ -382,7 +395,7 @@ A compound field that includes other compound fields and uses inflate/deflate co
 
 =head1 AUTHOR
 
-John C. Siracusa (siracusa@mindspring.com)
+John C. Siracusa (siracusa@gmail.com)
 
 =head1 COPYRIGHT
 

@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 276;
+use Test::More tests => 282;
 
 BEGIN 
 {
@@ -771,6 +771,8 @@ ok(!$form->param_exists_for_field('when'), 'param_exists_for_field() nested 2.9'
 ok(!$form->param_exists_for_field('when.date'), 'param_exists_for_field() nested 2.10');
 ok(!$form->param_exists_for_field('when.date.month'), 'param_exists_for_field() nested 2.11');
 ok(!$form->param_exists_for_field('when.time.hour'), 'param_exists_for_field() nested 2.12');
+
+$form = Rose::HTML::Form->new(onsubmit => 'foo()');
 
 BEGIN
 {

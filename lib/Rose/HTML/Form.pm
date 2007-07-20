@@ -15,11 +15,12 @@ use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
 our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.548';
+our $VERSION = '0.549';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
 (
+  'prepare',
   'children',
   'hidden_field',
   'hidden_fields',
@@ -1411,14 +1412,14 @@ sub form
 sub app
 {
   my($self) = shift; 
-  return Scalar::Util::weaken($self->{'app'} = shift)  if(@_);
+  Scalar::Util::weaken($self->{'app'} = shift)  if(@_);
   return $self->{'app'};
 }
 
 sub app_form
 {
   my($self) = shift; 
-  return Scalar::Util::weaken($self->{'app_form'} = shift)  if(@_);
+  Scalar::Util::weaken($self->{'app_form'} = shift)  if(@_);
   return $self->{'app_form'};
 }
 
@@ -1453,6 +1454,7 @@ sub AUTOLOAD
 
   unless($to_form)
   {
+    $Rose::HTML::Object::AUTOLOAD = $AUTOLOAD;
     goto &Rose::HTML::Object::AUTOLOAD;
   }
 
@@ -1470,6 +1472,7 @@ sub AUTOLOAD
     $to_form->$method(@_);
   }
 
+  $Rose::HTML::Object::AUTOLOAD = $AUTOLOAD;
   goto &Rose::HTML::Object::AUTOLOAD;
 }
 
@@ -1493,6 +1496,10 @@ FORM_HAS_ERRORS = "Ein oder mehrere Felder sind fehlerhaft."
 [% LOCALE fr %]
 
 FORM_HAS_ERRORS = "Erreurs dans un ou plusieurs champs."
+
+[% LOCALE bg %]
+
+FORM_HAS_ERRORS = "Има грешка в поне едно поле."
 
 __END__
 
@@ -1936,6 +1943,10 @@ Add VALUE to the parameter named NAME.  Example:
 
     print join(',', $form->param('a')); # 1,2
 
+=item B<app [OBJECT]>
+
+Get or set a L<weakened|Scalar::Util/weaken> reference to the application object that "owns" this form.
+
 =item B<build_on_init [BOOL]>
 
 Get or set a boolean flag that indicates whether or not L<build_form()|/build_form> should be called from within the L<init()|Rose::Object/init> method.  See L<build_form()|/build_form> for more information.
@@ -2131,6 +2142,10 @@ The default mapping of type names to class names is:
   'password'           => Rose::HTML::Form::Field::Password
 
   'hidden'             => Rose::HTML::Form::Field::Hidden
+
+  'num'                => Rose::HTML::Form::Field::Numeric,
+  'number'             => Rose::HTML::Form::Field::Numeric,
+  'numeric'            => Rose::HTML::Form::Field::Numeric,
 
   'int'                => Rose::HTML::Form::Field::Integer,
   'integer'            => Rose::HTML::Form::Field::Integer,
@@ -2698,7 +2713,7 @@ L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Rose-HTML-Objects>
 
 =head1 AUTHOR
 
-John C. Siracusa (siracusa@mindspring.com)
+John C. Siracusa (siracusa@gmail.com)
 
 =head1 COPYRIGHT
 

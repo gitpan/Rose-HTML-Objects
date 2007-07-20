@@ -11,7 +11,7 @@ use Rose::Object::MakeMethods::Generic
   boolean => 'multiple',
 );
 
-our $VERSION = '0.50';
+our $VERSION = '0.549';
 
 __PACKAGE__->add_required_html_attrs(
 {
@@ -35,6 +35,8 @@ sub label { shift->html_attr('label', @_) }
 
 sub html  { shift->html_field(@_) }
 sub xhtml { shift->xhtml_field(@_) }
+
+sub init_apply_error_class { 0 }
 
 1;
 
@@ -171,7 +173,7 @@ Returns the label of the first selected value (according to the order that they 
 
 =head1 AUTHOR
 
-John C. Siracusa (siracusa@mindspring.com)
+John C. Siracusa (siracusa@gmail.com)
 
 =head1 COPYRIGHT
 

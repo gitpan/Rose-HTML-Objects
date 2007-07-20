@@ -98,7 +98,7 @@ is($field->xhtml_field,
 $field->error("Do not pick orange!");
 
 is($field->html, 
-  qq(<select name="fruits" size="6">\n) .
+  qq(<select class="error" name="fruits" size="6">\n) .
   qq(<option value="apple">Apple</option>\n) .
   qq(<option selected value="orange">Orange</option>\n) .
   qq(<option value="grape">Grape</option>\n) .
@@ -107,7 +107,7 @@ is($field->html,
   'html()');
 
 is($field->xhtml, 
-  qq(<select name="fruits" size="6">\n) .
+  qq(<select class="error" name="fruits" size="6">\n) .
   qq(<option value="apple">Apple</option>\n) .
   qq(<option selected="selected" value="orange">Orange</option>\n) .
   qq(<option value="grape">Grape</option>\n) .
@@ -391,6 +391,8 @@ is($field->html_field,
   qq(</select>),
   'option group html_field() 1');
 
+$field->xhtml_hidden_fields;
+
 $field->add_value('peach');
 
 is(join(',', $field->input_value), 'apple,peach', 'input_value() 3');
@@ -455,6 +457,8 @@ is($field->html_field,
   qq(</optgroup>\n) .
   qq(</select>),
   'option group html_field() 3');
+
+$field->xhtml_hidden_fields;
 
 $field->add_value('apple');
 

@@ -7,7 +7,7 @@ use Rose::HTML::Object::Errors qw(:string);
 use Rose::HTML::Form::Field::Input;
 our @ISA = qw(Rose::HTML::Form::Field::Input);
 
-our $VERSION = '0.545';
+our $VERSION = '0.549';
 
 __PACKAGE__->delete_valid_html_attrs(qw(ismap usemap alt src));
 
@@ -41,11 +41,12 @@ sub validate
   return $ok  unless($ok);
 
   my $value = $self->input_value;
+  $value = $self->output_value  if(ref $value);
   return 1  unless(defined $value && length $value);
 
   my $maxlength = $self->maxlength;
 
-  my $name = sub { $self->label || $self->name };
+  my $name = sub { $self->error_label || $self->name };
 
   if(defined $maxlength && length($value) > $maxlength)
   {
@@ -68,6 +69,10 @@ __DATA__
 [% LOCALE en %]
 
 STRING_OVERFLOW = "[label] must not exceed [maxlength] characters."
+
+[% LOCALE bg %]
+
+STRING_OVERFLOW = "Полето '[label]' не трябва да надхвърля [maxlength] символа."
 
 __END__
 
@@ -158,7 +163,7 @@ Constructs a new L<Rose::HTML::Form::Field::Text> object based on PARAMS, where 
 
 =head1 AUTHOR
 
-John C. Siracusa (siracusa@mindspring.com)
+John C. Siracusa (siracusa@gmail.com)
 
 =head1 COPYRIGHT
 

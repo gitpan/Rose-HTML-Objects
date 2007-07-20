@@ -6,61 +6,66 @@ use Rose::HTML::Object::Errors qw(:number);
 
 BEGIN
 {
-  use Test::More tests => 42;
-  use_ok('Rose::HTML::Form::Field::Integer');
+  use Test::More tests => 46;
+  use_ok('Rose::HTML::Form::Field::Numeric');
 }
 
-my $field = Rose::HTML::Form::Field::Integer->new(
+my $field = Rose::HTML::Form::Field::Numeric->new(
   label       => 'Num', 
   description => 'Your num',
   name        => 'num',  
   value       => 123,
   default     => 456,
-  maxlength   => 7);
+  maxlength   => 20);
+
+ok(ref $field eq 'Rose::HTML::Form::Field::Numeric', 'new()');
 
 ok($field->validate, 'validate() 0');
 
-ok(ref $field eq 'Rose::HTML::Form::Field::Integer', 'new()');
-
-is($field->html_field, '<input maxlength="7" name="num" size="6" type="text" value="123">', 'html_field() 1');
-is($field->xhtml_field, '<input maxlength="7" name="num" size="6" type="text" value="123" />', 'xhtml_field() 1');
+is($field->html_field, '<input maxlength="20" name="num" size="6" type="text" value="123">', 'html_field() 1');
+is($field->xhtml_field, '<input maxlength="20" name="num" size="6" type="text" value="123" />', 'xhtml_field() 1');
 
 $field->clear;
 
 is($field->internal_value, undef, 'clear()');
 
-is($field->html_field, '<input maxlength="7" name="num" size="6" type="text" value="">', 'html_field() 2');
-is($field->xhtml_field, '<input maxlength="7" name="num" size="6" type="text" value="" />', 'xhtml_field() 2');
+is($field->html_field, '<input maxlength="20" name="num" size="6" type="text" value="">', 'html_field() 2');
+is($field->xhtml_field, '<input maxlength="20" name="num" size="6" type="text" value="" />', 'xhtml_field() 2');
 
 $field->reset;
 
 is($field->internal_value, '456', 'reset()');
 
-is($field->html_field, '<input maxlength="7" name="num" size="6" type="text" value="456">', 'html_field() 3');
-is($field->xhtml_field, '<input maxlength="7" name="num" size="6" type="text" value="456" />', 'xhtml_field() 3');
+is($field->html_field, '<input maxlength="20" name="num" size="6" type="text" value="456">', 'html_field() 3');
+is($field->xhtml_field, '<input maxlength="20" name="num" size="6" type="text" value="456" />', 'xhtml_field() 3');
 
-$field->input_value('123');
+$field->input_value('123.456');
 
 $field->class('foo');
 $field->id('bar');
 $field->style('baz');
 
-is($field->html_field, '<input class="foo" id="bar" maxlength="7" name="num" size="6" style="baz" type="text" value="123">', 'html_field() 4');
-is($field->xhtml_field, '<input class="foo" id="bar" maxlength="7" name="num" size="6" style="baz" type="text" value="123" />', 'xhtml_field() 4');
+is($field->html_field, '<input class="foo" id="bar" maxlength="20" name="num" size="6" style="baz" type="text" value="123.456">', 'html_field() 4');
+is($field->xhtml_field, '<input class="foo" id="bar" maxlength="20" name="num" size="6" style="baz" type="text" value="123.456" />', 'xhtml_field() 4');
 
 $field->input_value('bad');  
 ok(!$field->validate, 'validate() 1');
-is($field->error, 'Num must be an integer.', 'error() 1');
-is($field->error_id, NUM_INVALID_INTEGER, 'error_id() 1');
+is($field->error, 'Num must be a number.', 'error() 1');
+is($field->error_id, NUM_INVALID_NUMBER, 'error_id() 1');
 
 $field->input_value('7^7');  
 ok(!$field->validate, 'validate() 2');
 
-$field->input_value('1.23');  
-ok(!$field->validate, 'validate() 3');
+$field->input_value('-1.23');  
+ok($field->validate, 'validate() 3');
 
-$field->input_value(' 123 ');  
+$field->input_value(' - 123.456 ');
 ok($field->validate, 'validate() 4');
+is($field->internal_value, '-123.456', 'internal_value() 1');
+
+$field->input_value('   +  123.456 ');
+ok($field->validate, 'validate() 4.1');
+is($field->internal_value, '123.456', 'internal_value() 2');
 
 ok(!$field->error, 'error() 2');
 
@@ -70,8 +75,8 @@ ok(!$field->error, 'error() 3');
 
 $field->min(0);
 ok(!$field->validate, 'validate() 6');
-is($field->error, 'Num must be a positive integer.', 'error() 4');
-is($field->error_id, NUM_NOT_POSITIVE_INTEGER, 'error_id() 2');
+is($field->error, 'Num must be a positive number.', 'error() 4');
+is($field->error_id, NUM_NOT_POSITIVE_NUMBER, 'error_id() 2');
 
 $field->min(1);
 ok(!$field->validate, 'validate() 7');
@@ -116,3 +121,6 @@ $field->input_value(-400);
 ok($field->validate, 'validate() 17');
 $field->input_value(400);
 ok($field->validate, 'validate() 18');
+
+$field->input_value('400a');
+ok(!$field->validate, 'validate() 19');

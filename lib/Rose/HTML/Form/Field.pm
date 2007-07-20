@@ -19,7 +19,7 @@ use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.548';
+our $VERSION = '0.549';
 
 #our $Debug = 0;
 
@@ -44,7 +44,7 @@ use Rose::Object::MakeMethods::Generic
   'scalar --get_set_init' => 
   [
     qw(html_prefix html_suffix html_error_separator xhtml_error_separator
-       local_moniker)
+       local_moniker apply_error_class)
   ],
 );
 
@@ -88,6 +88,8 @@ sub error_label_id
   no warnings 'uninitialized';
   return (defined $label) ? (length $label ? $label : undef) : $self->label;
 }
+
+sub init_apply_error_class { 1 }
 
 sub auto_invalidate_parent
 {
@@ -594,18 +596,18 @@ sub html_tag
 {
   my($self) = shift;
 
-  if(defined $self->error)
+  if($self->html_element && $self->apply_error_class && defined $self->error)
   {
     my $class = $self->html_attr('class');
     $self->html_attr(class => $class ? "$class error" : 'error');
 
-    my $html = $self->html_field(@_);
+    my $html = $self->Rose::HTML::Object::html_tag(@_);
     $self->html_attr(class => $class);
     return $html;
   }
   else
   {
-    $self->html_field(@_);
+    $self->SUPER::html_tag(@_);
   }
 }
 
@@ -613,23 +615,23 @@ sub xhtml_tag
 {
   my($self) = shift;
 
-  if(defined $self->error)
+  if($self->html_element && $self->apply_error_class && defined $self->error)
   {
     my $class = $self->html_attr('class');
     $self->html_attr(class => $class ? "$class error" : 'error');
 
-    my $html = $self->xhtml_field(@_);
+    my $html = $self->Rose::HTML::Object::xhtml_tag(@_);
     $self->html_attr(class => $class);
     return $html;
   }
   else
   {
-    $self->xhtml_field(@_);
+    $self->SUPER::xhtml_tag(@_);
   }
 }
 
-*html_field  = \&Rose::HTML::Object::html_tag;
-*xhtml_field = \&Rose::HTML::Object::xhtml_tag;
+*html_field  = \&html_tag;
+*xhtml_field = \&xhtml_tag;
 
 sub html
 {
@@ -720,10 +722,6 @@ sub xhtml_label
   my($self) = shift;
   no warnings 'uninitialized';
   return ''  unless(length $self->label);
-if($self->name =~ /expire/)
-{
-$DB::single = 1;
-}
   return $self->label_object(@_)->xhtml_tag;
 }
 
@@ -954,6 +952,8 @@ __DATA__
 
 [% LOCALE en %]
 
+FIELD_LABEL = ""
+FIELD_DESCRIPTION = ""
 FIELD_REQUIRED_GENERIC  = "This is a required field."
 FIELD_REQUIRED_LABELLED = "[1] is a required field."
 
@@ -979,6 +979,15 @@ FIELD_REQUIRED_LABELLED = "[1] est un champ obligatoire."
 FIELD_PARTIAL_VALUE     = "Valeur incomplète."
 FIELD_INVALID_GENERIC   = "Valeur invalide."
 FIELD_INVALID_LABELLED  = "[label] est invalide."
+
+[% LOCALE bg %]
+
+FIELD_REQUIRED_GENERIC  = "Това поле е задължително."
+FIELD_REQUIRED_LABELLED = "Полето '[1]' е задължително."
+
+FIELD_PARTIAL_VALUE     = "Непълна стойност."
+FIELD_INVALID_GENERIC   = "Стойността е невалидна."
+FIELD_INVALID_LABELLED  = "Полето '[label]' е невалидно."
 
 __END__
 
@@ -1457,7 +1466,7 @@ L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Rose-HTML-Objects>
 
 =head1 AUTHOR
 
-John C. Siracusa (siracusa@mindspring.com)
+John C. Siracusa (siracusa@gmail.com)
 
 =head1 COPYRIGHT
 

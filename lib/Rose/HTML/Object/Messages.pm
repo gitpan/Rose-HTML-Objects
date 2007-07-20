@@ -94,6 +94,16 @@ sub get_message_id
   return undef;
 }
 
+sub message_ids
+{
+  my($class) = shift;
+  my $map = $class->message_id_to_name_map;
+
+  return wantarray ? 
+    (sort { $a <=> $b } keys %$map) : 
+    [ sort { $a <=> $b } keys %$map ];
+}
+
 sub get_message_name { $_[0]->message_id_to_name_map->{$_[1]} }
 
 sub add_message
@@ -202,6 +212,9 @@ use constant FIELD_ERROR_LABEL_HOUR   => 11_003;
 use constant FIELD_ERROR_LABEL_MINUTE => 11_004;
 use constant FIELD_ERROR_LABEL_SECOND => 11_005;
 
+use constant FIELD_ERROR_LABEL_MINIMUM_DATE => 11_006;
+use constant FIELD_ERROR_LABEL_MAXIMUM_DATE => 11_007;
+
 # Forms
 use constant FORM_HAS_ERRORS => 100;
 
@@ -211,6 +224,9 @@ use constant NUM_INVALID_INTEGER_POSITIVE => 1301;
 use constant NUM_NOT_POSITIVE_INTEGER     => 1302;
 use constant NUM_BELOW_MIN                => 1303;
 use constant NUM_ABOVE_MAX                => 1304;
+use constant NUM_INVALID_NUMBER           => 1305;
+use constant NUM_INVALID_NUMBER_POSITIVE  => 1306;
+use constant NUM_NOT_POSITIVE_NUMBER      => 1307;
 
 # String messages
 use constant STRING_OVERFLOW => 1400;
