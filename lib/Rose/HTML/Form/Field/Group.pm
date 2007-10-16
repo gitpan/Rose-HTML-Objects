@@ -3,13 +3,14 @@ package Rose::HTML::Form::Field::Group;
 use strict;
 
 use Carp();
+use Scalar::Defer();
 
 use Rose::HTML::Util();
 
 use Rose::HTML::Form::Field;
 our @ISA = qw(Rose::HTML::Form::Field);
 
-our $VERSION = '0.547';
+our $VERSION = '0.550';
 
 our $Debug = undef;
 
@@ -64,7 +65,7 @@ sub items
     $self->init_items;
   }
 
-  return (wantarray) ? @{$self->{'items'}} : $self->{'items'};
+  return (wantarray) ? @{$self->{'items'} || []} : $self->{'items'};
 }
 
 sub items_localized
@@ -194,15 +195,60 @@ sub _args_to_items
       $item->parent_field($parent);
     }
   }
-  else # If there is no grandparent, at least set the localizer
+  else # At least set the localizer
   {
     foreach my $item (@$items)
     {
-      $item->localizer($self->localizer);
+      $item->localizer(Scalar::Defer::lazy { $self->localizer });
+
+      if(my $parent = $self->parent_form)
+      {
+        $item->locale(Scalar::Defer::defer { $parent->locale });
+      }
+
+      # Maybe we'll have a parent later?
+      #$item->parent_field(Scalar::Defer::lazy { $self->parent_field });
+      #$item->parent_form(Scalar::Defer::lazy { $self->parent_form });
     }
   }
 
   return (wantarray) ? @$items : $items;
+}
+
+sub parent_field
+{
+  my($self) = shift; 
+
+  if(@_)
+  {
+    if(my $parent = $self->SUPER::parent_field(@_))
+    {
+      foreach my $item ($self->items)
+      {
+        $item->parent_field($parent)  unless($item->parent_field);
+      }
+    }    
+  }
+
+  return $self->SUPER::parent_field;
+}
+
+sub parent_form
+{
+  my($self) = shift; 
+
+  if(@_)
+  {
+    if(my $parent = $self->SUPER::parent_form(@_))
+    {
+      foreach my $item ($self->items)
+      {
+        $item->locale(Scalar::Defer::defer { $parent->locale });
+      }
+    }
+  }
+
+  return $self->SUPER::parent_form;
 }
 
 sub add_items
