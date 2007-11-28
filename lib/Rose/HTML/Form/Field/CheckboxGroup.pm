@@ -10,19 +10,29 @@ use Rose::HTML::Form::Field::Group;
 use Rose::HTML::Form::Field::Group::OnOff;
 our @ISA = qw(Rose::HTML::Form::Field::Group::OnOff);
 
-our $VERSION = '0.549';
+our $VERSION = '0.551';
 
 sub _item_class       { 'Rose::HTML::Form::Field::Checkbox' }
 sub _item_name        { 'checkbox' }
 sub _item_name_plural { 'checkboxes' }
 
-*checkboxes = \&Rose::HTML::Form::Field::Group::items;
+*checkboxes         = \&Rose::HTML::Form::Field::Group::items;
+*visible_checkboxes = \&Rose::HTML::Form::Field::Group::visible_items;
 
 *checkbox       = \&Rose::HTML::Form::Field::Group::OnOff::item;
 *add_checkboxes = \&Rose::HTML::Form::Field::Group::add_items;
 *add_checkbox   = \&add_checkboxes;
 
 *choices = \&checkboxes;
+
+*show_all_checkboxes = \&Rose::HTML::Form::Field::Group::show_all_items;
+*hide_all_checkboxes = \&Rose::HTML::Form::Field::Group::hide_all_items;
+
+*delete_checkbox   = \&Rose::HTML::Form::Field::Group::delete_item;
+*delete_checkboxes = \&Rose::HTML::Form::Field::Group::delete_items;
+
+*delete_checkbox_group    = \&Rose::HTML::Form::Field::Group::delete_item_group;
+*delete_checkboxes_groups = \&Rose::HTML::Form::Field::Group::delete_item_groups;
 
 sub html_table
 {
@@ -53,14 +63,14 @@ sub html_table
   if($args{'_xhtml'})
   {
     return
-      $self->SUPER::html_table(items       => scalar $self->checkboxes,
+      $self->SUPER::html_table(items       => scalar $self->visible_checkboxes,
                                format_item => \&Rose::HTML::Form::Field::Group::_xhtml_item,
                                %args);
   }
   else
   {
     return
-      $self->SUPER::html_table(items       => scalar $self->checkboxes,
+      $self->SUPER::html_table(items       => scalar $self->visible_checkboxes,
                                format_item => \&Rose::HTML::Form::Field::Group::_html_item,
                                %args);
   }
@@ -230,7 +240,7 @@ To set an ordered list of checkboxes along with labels in the constructor, use b
 
 Remember that methods are called in the order that they appear in the constructor arguments (see the L<Rose::Object> documentation), so L<checkboxes()|/checkboxes> will be called before L<labels()|/labels> in the example above.  This is important; it will not work in the opposite order.
 
-Returns a list of the checkbox group's L<Rose::HTML::Form::Field::Checkbox> objects in list context, or a reference to an array of the same in scalar context. These are the actual objects used in the field. Modifying them will modify the field itself.
+Returns a list of the checkbox group's L<Rose::HTML::Form::Field::Checkbox> objects in list context, or a reference to an array of the same in scalar context.  L<Hidden|Rose::HTML::Form::Field::Checkbox/hidden> checkboxes I<will> be included in this list.  These are the actual objects used in the field. Modifying them will modify the field itself.
 
 =item B<choices [CHECKBOXES]>
 
@@ -240,9 +250,23 @@ This is an alias for the L<checkboxes|/checkboxes> method.
 
 Get or set the default number of columns to use in the output of the L<html_table()|/html_table> and L<xhtml_table()|/xhtml_table> methods.
 
+=item B<delete_checkbox VALUE>
+
+Deletes the first checkbox (according to the order that they are returned from L<checkboxes()|/checkboxes>) whose "value" HTML attribute is VALUE.  Returns the deleted checkbox or undef if no such checkbox exists.
+
+=item B<delete_checkboxes LIST>
+
+Repeatedly calls L<delete_checkbox|/delete_checkbox>, passing each value in LIST.
+
+Deletes the first checkbox (according to the order that they are returned from L<checkboxes()|/checkboxes>) whose "value" HTML attribute is VALUE, or undef if no such checkbox exists.
+
 =item B<has_value VALUE>
 
 Returns true if the checkbox whose value is VALUE is checked, false otherwise.
+
+=item B<hide_all_checkboxes>
+
+Set L<hidden|Rose::HTML::Form::Field::Checkbox/hidden> to true for all L<checkboxes|/checkboxes>.
 
 =item B<html>
 
@@ -307,6 +331,10 @@ Get or set the flag that determines whether or not the string stored in L<html_l
 =item B<rows [ROWS]>
 
 Get or set the default number of rows to use in the output of the L<html_table()|/html_table> and L<xhtml_table()|/xhtml_table> methods.
+
+=item B<show_all_checkboxes>
+
+Set L<hidden|Rose::HTML::Form::Field::Checkbox/hidden> to false for all L<checkboxes|/checkboxes>.
 
 =item B<value [VALUE]>
 

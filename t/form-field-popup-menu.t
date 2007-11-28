@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 46;
+use Test::More tests => 57;
 
 BEGIN 
 {
@@ -279,6 +279,32 @@ is($field->html_field,
   qq(</select>),
   'clear labels 1');
 
+$field->option('grape')->hidden(1);
+
+is($field->html_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option selected value="apple"></option>\n) .
+  qq(<option value="orange"></option>\n) .
+  qq(<option value="pear"></option>\n) .
+  qq(<option value="berry"></option>\n) .
+  qq(<option value="squash"></option>\n) .
+  qq(<option value="cherry"></option>\n) .
+  qq(</select>),
+  'hidden 1');
+
+is($field->xhtml_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option selected="selected" value="apple"></option>\n) .
+  qq(<option value="orange"></option>\n) .
+  qq(<option value="pear"></option>\n) .
+  qq(<option value="berry"></option>\n) .
+  qq(<option value="squash"></option>\n) .
+  qq(<option value="cherry"></option>\n) .
+  qq(</select>),
+  'hidden 2');
+
+$field->option('grape')->hidden(0);
+
 $field->reset_labels;
 
 is($field->html_field, 
@@ -307,7 +333,7 @@ $group->options(juji  => 'Juji',
                 peach => 'Peach');
 
 $field->add_options($group);
-    
+
 my $field2 = 
   Rose::HTML::Form::Field::PopUpMenu->new(
     name    => 'fruits',
@@ -324,3 +350,106 @@ my $field2 =
     ]);
 
 is($field->xhtml, $field2->xhtml, 'nested option group 1');
+
+is($field->html_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<option value="orange">Orange</option>\n) .
+  qq(<option value="grape">Grape</option>\n) .
+  qq(<optgroup label="Others">\n) .
+  qq(<option value="juji">Juji</option>\n) .
+  qq(<option value="peach">Peach</option>\n) .
+  qq(</optgroup>\n) .
+  qq(</select>),
+  'hidden 3');
+
+is($field->xhtml_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<option value="orange">Orange</option>\n) .
+  qq(<option value="grape">Grape</option>\n) .
+  qq(<optgroup label="Others">\n) .
+  qq(<option value="juji">Juji</option>\n) .
+  qq(<option value="peach">Peach</option>\n) .
+  qq(</optgroup>\n) .
+  qq(</select>),
+  'hidden 4');
+
+$group->option('juji')->hide;
+
+is($field->xhtml_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<option value="orange">Orange</option>\n) .
+  qq(<option value="grape">Grape</option>\n) .
+  qq(<optgroup label="Others">\n) .
+  qq(<option value="peach">Peach</option>\n) .
+  qq(</optgroup>\n) .
+  qq(</select>),
+  'hidden 4.1');
+
+$group->option('juji')->show;
+$field->option('peach')->hide;
+
+is($field->xhtml_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<option value="orange">Orange</option>\n) .
+  qq(<option value="grape">Grape</option>\n) .
+  qq(<optgroup label="Others">\n) .
+  qq(<option value="juji">Juji</option>\n) .
+  qq(</optgroup>\n) .
+  qq(</select>),
+  'hidden 4.2');
+
+$group->option('peach')->show;
+$group->hidden(1);
+
+is($field->html_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<option value="orange">Orange</option>\n) .
+  qq(<option value="grape">Grape</option>\n) .
+  qq(</select>),
+  'hidden 5');
+
+is($field->xhtml_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<option value="orange">Orange</option>\n) .
+  qq(<option value="grape">Grape</option>\n) .
+  qq(</select>),
+  'hidden 6');
+
+$field->show_all_options;
+$field->delete_option('grape');
+
+is($field->html_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<option value="orange">Orange</option>\n) .
+  qq(<optgroup label="Others">\n) .
+  qq(<option value="juji">Juji</option>\n) .
+  qq(<option value="peach">Peach</option>\n) .
+  qq(</optgroup>\n) .
+  qq(</select>),
+  'delete 1');
+
+$field->delete_options('grape', 'peach', 'orange');
+
+is($field->html_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(<optgroup label="Others">\n) .
+  qq(<option value="juji">Juji</option>\n) .
+  qq(</optgroup>\n) .
+  qq(</select>),
+  'delete 2');
+
+$field->delete_option_group('Others', 'nonesuch');
+
+is($field->html_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option value="apple">Apple</option>\n) .
+  qq(</select>),
+  'delete 3');

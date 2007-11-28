@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Rose-HTML-Objects
-version:             0.550
+version:             0.550_05
 abstract:            ~
 license:             ~
 generated_by:        ExtUtils::MakeMaker version 6.36

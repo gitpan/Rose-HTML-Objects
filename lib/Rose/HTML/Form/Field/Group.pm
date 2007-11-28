@@ -10,7 +10,7 @@ use Rose::HTML::Util();
 use Rose::HTML::Form::Field;
 our @ISA = qw(Rose::HTML::Form::Field);
 
-our $VERSION = '0.550';
+our $VERSION = '0.551';
 
 our $Debug = undef;
 
@@ -62,10 +62,114 @@ sub items
   if(@_)
   {
     $self->{'items'} = $self->_args_to_items({ localized => 0 }, @_);
+    $self->label_items;
     $self->init_items;
   }
 
   return (wantarray) ? @{$self->{'items'} || []} : $self->{'items'};
+}
+
+sub visible_items
+{
+  my $items = shift->items or return;
+  return wantarray ? (grep { !$_->hidden } @$items) : [ grep { !$_->hidden } @$items ];
+}
+
+sub show_all_items
+{
+  my($self) = shift;
+
+  foreach my $item ($self->items)
+  {
+    $item->hidden(0);
+  }
+}
+
+sub hide_all_items
+{
+  my($self) = shift;
+
+  foreach my $item ($self->items)
+  {
+    $item->hidden(1);
+  }
+}
+
+sub delete_item
+{
+  my($self, $value) = @_;
+
+  my $delete_item = $self->item($value) or return;
+  my $group_class = $self->_item_group_class;
+
+  my $items = $self->items || [];
+
+  my $i = 0;
+
+  foreach my $item (@$items)
+  {
+    if($item->isa($group_class))
+    {
+      if(my $deleted = $item->delete_item($value))
+      {
+        return $deleted;
+      }
+    }
+
+    last  if($item eq $delete_item);
+    $i++;
+  }
+
+  return splice(@$items, $i, 1);
+}
+
+sub delete_items
+{
+  my($self) = shift;
+
+  foreach my $arg (@_)
+  {
+    $self->delete_item($arg);
+  }
+}
+
+sub delete_item_group
+{
+  my($self, $value) = @_;
+
+  my $group_class = $self->_item_group_class;
+  my $delete_item = UNIVERSAL::isa($value, $group_class) ? $value : ($self->item_group($value) or return);
+
+  my $items = $self->items || [];
+
+  my $i = 0;
+
+  foreach my $item (@$items)
+  {
+    last  if($item eq $delete_item);
+
+    if($item->isa($group_class))
+    {
+      if(my $deleted = $item->delete_item($value))
+      {
+        return $deleted;
+      }
+    }
+
+    $i++;
+  }
+
+  return splice(@$items, $i, 1);
+}
+
+sub delete_item_groups
+{
+  my($self) = shift;
+
+  foreach my $arg (@_)
+  {
+    $self->delete_item_group($arg);
+  }
 }
 
 sub items_localized
@@ -181,34 +285,17 @@ sub _args_to_items
     }
   }
 
-  # Hrm, this is kind of ugly.  Set parent of the items to the parent of
-  # the group field itself, in order to get the correct naming for the
-  # items.  For example, a checkbox group named "food.fruits" needs
-  # checkboxes that are also named "food.fruits", differing in their
-  # value="..." attributes only.  Setting the parent of the items to the
-  # group field itself would cause all the checkboxes to be named
-  # "food.fruits.fruits", which is wrong.
-  if(my $parent = $self->parent_field)
+  foreach my $item (@$items)
   {
-    foreach my $item (@$items)
-    {
-      $item->parent_field($parent);
-    }
-  }
-  else # At least set the localizer
-  {
-    foreach my $item (@$items)
-    {
-      $item->localizer(Scalar::Defer::lazy { $self->localizer });
+    # Connect item to group
+    $item->parent_group($self)  if($item->can('parent_group'));
 
-      if(my $parent = $self->parent_form)
-      {
-        $item->locale(Scalar::Defer::defer { $parent->locale });
-      }
+    # Speculatively hook up localizer and locale    
+    $item->localizer(Scalar::Defer::defer { $self->localizer });
 
-      # Maybe we'll have a parent later?
-      #$item->parent_field(Scalar::Defer::lazy { $self->parent_field });
-      #$item->parent_form(Scalar::Defer::lazy { $self->parent_form });
+    if(my $parent = $self->parent_form)
+    {
+      $item->locale(Scalar::Defer::defer { $parent->locale });
     }
   }
 
@@ -255,7 +342,7 @@ sub add_items
 {
   my($self) = shift;
 
-  push(@{$self->{'items'}},  $self->_args_to_items({ localized => 0 }, @_));
+  push(@{$self->{'items'}}, $self->_args_to_items({ localized => 0 }, @_));
 
   $self->init_items;
 }
@@ -280,15 +367,21 @@ sub label_items
   my $labels    = $self->{'labels'} || {};
   my $label_ids = $self->{'label_ids'} || {};
 
+  return  unless(%$labels || %$label_ids);
+
   foreach my $item ($self->items)
   {
-    if(exists $label_ids->{$item->html_attr('value')})
+    my $value = $item->html_attr('value');
+    
+    next  unless(defined $value);
+
+    if(exists $label_ids->{$value})
     {
-      $item->label_id($label_ids->{$item->html_attr('value')});
+      $item->label_id($label_ids->{$value});
     }
-    elsif(exists $labels->{$item->html_attr('value')})
+    elsif(exists $labels->{$value})
     {
-      $item->label($labels->{$item->html_attr('value')});
+      $item->label($labels->{$value});
     }
   }
 }
@@ -470,7 +563,7 @@ sub html_field
 {
   my($self) = shift;
   my $sep = ($self->linebreak) ? $self->html_linebreak : ' ';
-  return join($sep, map { $_->html_field } $self->items);
+  return join($sep, map { $_->html_field } $self->visible_items);
 }
 
 *html_fields = \&html_field;
@@ -479,7 +572,7 @@ sub xhtml_field
 {
   my($self) = shift;
   my $sep = ($self->linebreak) ? $self->xhtml_linebreak : ' ';
-  return join($sep, map { $_->xhtml_field } $self->items);
+  return join($sep, map { $_->xhtml_field } $self->visible_items);
 }
 
 *xhtml_fields = \&xhtml_field;
