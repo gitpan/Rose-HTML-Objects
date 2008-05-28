@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 169;
+use Test::More tests => 177;
 
 BEGIN 
 {
@@ -14,6 +14,9 @@ BEGIN
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MonthDayYear');
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MDYHMS');
 }
+
+# Mmm, fuzzy...
+Rose::HTML::Form->default_recursive_init_fields(rand > 0.5 ? 1 : 0);
 
 my $person_form = MyPersonForm->new;
 
@@ -539,6 +542,44 @@ is(join("\n", map { $_->html } $f1->fields),
    qq(<input name="subform.bar" type="radio" value="Yes"> <label>Yes</label><br>\n) .
    qq(<input name="subform.bar" type="radio" value="No"> <label>No</label>),
    'nested grouped fields 1');
+
+#
+# Modifying nested fields
+#
+
+my $f = MyPersonForm->new;
+
+$f->add_form(n => MyPersonForm->new);
+
+is(join(', ', map { $_->name } $f->fields), 'age, bday, gender, name, start, n.age, n.bday, n.gender, n.name, n.start', 'nested modification 1');
+
+$f->form('n')->add_field('new' => { type => 'text' });
+
+is(join(', ', map { $_->name } $f->fields), 'age, bday, gender, name, start, n.age, n.bday, n.gender, n.name, n.new, n.start', 'nested modification 2');
+
+#
+# local_fields()
+#
+
+$form = MyPersonAddressDogForm->new;
+
+is(join(' ', map { $_->name } sort { $a->name cmp $b->name } $form->local_fields), 'dog', 'local fields 1');
+
+$form->add_field(bar => { type => 'text' });
+
+is(join(' ', map { $_->name } sort { $a->name cmp $b->name } $form->local_fields), 'bar dog', 'local fields 2');
+is(join(' ', map { $_->name } sort { $a->name cmp $b->name } $form->form('person_address')->local_fields), '', 'local fields 3');
+is(join(' ', map { $_->name } sort { $a->name cmp $b->name } $form->form('person_address.person')->local_fields), 'person_address.person.age person_address.person.bday person_address.person.gender person_address.person.name person_address.person.start', 'local fields 4');
+is(join(' ', map { $_->local_name } sort { $a->local_name cmp $b->local_name } $form->form('person_address.person')->local_fields), 'age bday gender name start', 'local fields 5');
+
+#
+# Nested add
+#
+
+$form->add_form('person_address.person.person2' => MyPersonForm->new);
+
+is(join(', ', $form->field_names), qq(bar, dog, person_address.address.city, person_address.address.your_state, person_address.address.street, person_address.address.zip, person_address.person.person2.age, person_address.person.person2.bday, person_address.person.person2.gender, person_address.person.person2.your_name, person_address.person.person2.start, person_address.person.age, person_address.person.bday, person_address.person.gender, person_address.person.your_name, person_address.person.start),
+   'nested add 1');
 
 BEGIN
 {

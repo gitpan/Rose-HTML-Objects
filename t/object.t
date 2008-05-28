@@ -2,13 +2,50 @@
 
 use strict;
 
-use Test::More tests => 216;
+use Test::More tests => 227;
 
 BEGIN { use_ok('Rose::HTML::Object') }
 
-my $o = Rose::HTML::Object->new;
+#
+# Generic object stuff
+#
+
+my $o = Rose::HTML::Object->new('p');
 ok(ref $o eq 'Rose::HTML::Object', 'new()');
 
+$o->push_child('hello');
+
+is($o->html, '<p>hello</p>', 'push_child 1');
+
+$o->add_child("\n");
+
+$o->add_children(Rose::HTML::Object->new(element => 'b', children => [ 'world' ]));
+
+is($o->xhtml, "<p>hello\n<b>world</b></p>", 'add_children 1');
+
+is($o->children->[0]->parent, $o, 'parent 1');
+is($o->children->[2]->child(0)->parent, $o->children->[2], 'parent 2');
+
+is(join(',', $o->descendants), join(',', $o->child(0), $o->child(1), $o->child(2),
+                                         $o->child(2)->child(0)), 'descendants');
+
+$o->delete_child(9999);
+$o->delete_child(1);
+
+is($o->html, "<p>hello<b>world</b></p>", 'delete_child 1');
+
+my $o2 = Rose::HTML::Object->new('div');
+
+$o->child(0)->parent($o2);
+
+is($o->html, "<p><b>world</b></p>", 'parent 1');
+is($o2->xhtml, '<div>hello</div>', 'parent 2');
+
+$o->delete_children;
+
+is(scalar @{ $o->children }, 0, 'children');
+
+$o = Rose::HTML::Object->new;
 
 is(scalar @{ $o->children }, 0, 'children scalar');
 is(scalar(() = $o->children), 0, 'children list');
@@ -195,11 +232,17 @@ $o->tall(' ');
 is($o->html_attrs_string, ' age="" name="" smart tall', 'html_attrs_string() 4');
 is($o->xhtml_attrs_string, ' age="" name="" smart="smart" tall="tall"', 'xhtml_attrs_string() 1');
 
-is(Rose::HTML::Object->html_element('foo'), 'foo', 'html_element()');
-is(Rose::HTML::Object->xhtml_element('xfoo'), 'xfoo', 'xhtml_element()');
+is($o->html_element('foo'), 'foo', 'html_element()');
+is($o->xhtml_element('xfoo'), 'xfoo', 'xhtml_element()');
 
-is($o->html_tag, '<foo age="" name="" smart tall>', 'html_tag()');
+$o->is_self_closing(1);
+is($o->html_tag, '<foo age="" name="" smart tall>', 'html_tag() 1');
+$o->is_self_closing(0);
+is($o->html_tag, '<foo age="" name="" smart tall></foo>', 'html_tag() 2');
+$o->is_self_closing(1);
 is($o->xhtml_tag, '<xfoo age="" name="" smart="smart" tall="tall" />', 'xhtml_tag()');
+$o->is_self_closing(0);
+is($o->xhtml_tag, '<xfoo age="" name="" smart="smart" tall="tall"></xfoo>', 'xhtml_tag()');
 
 foreach my $attr (Rose::HTML::Object->valid_html_attrs)
 {

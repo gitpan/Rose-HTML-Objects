@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 57;
+use Test::More tests => 67;
 
 BEGIN 
 {
@@ -23,6 +23,8 @@ $field->options(apple  => 'Apple',
 
 is(scalar @{ $field->children }, 3, 'children scalar 2');
 is(scalar(() = $field->children), 3, 'children list 2');
+
+is($field->is_empty, 1, 'is_empty 1');
 
 is(join(',', sort $field->labels), 'Apple,Grape,Orange,apple,grape,orange', 'labels()');
 
@@ -90,6 +92,8 @@ is($field->html_field,
   qq(<option value="grape">Grape</option>\n) .
   qq(</select>),
   'value() 1');
+
+is($field->is_empty, 0, 'is_empty 2');
 
 $field->error("Do not pick orange!");
 
@@ -453,3 +457,50 @@ is($field->html_field,
   qq(<option value="apple">Apple</option>\n) .
   qq(</select>),
   'delete 3');
+
+$field = Rose::HTML::Form::Field::PopUpMenu->new(name => 'fruits');
+
+$field->options(apple  => 'Apple',
+                orange => 'Orange',
+                grape  => 'Grape');
+
+my $i = 1;
+
+foreach my $name (qw(items options))
+{
+  my $method = "${name}_html_attr";
+
+  $field->$method(class => 'bar');
+
+  is($field->xhtml_field, 
+    qq(<select name="fruits" size="1">\n) .
+    qq(<option class="bar" value="apple">Apple</option>\n) .
+    qq(<option class="bar" value="orange">Orange</option>\n) .
+    qq(<option class="bar" value="grape">Grape</option>\n) .
+    qq(</select>),
+    "$method " . $i++);
+
+  is($field->$method('class'), 'bar', "$method " . $i++);
+
+  $method = "delete_${name}_html_attr";
+
+  $field->$method('class');
+
+  is($field->xhtml_field, 
+    qq(<select name="fruits" size="1">\n) .
+    qq(<option value="apple">Apple</option>\n) .
+    qq(<option value="orange">Orange</option>\n) .
+    qq(<option value="grape">Grape</option>\n) .
+    qq(</select>),
+    "$method " . $i++);    
+}
+
+$field->add_option('');
+
+$field->input_value('apple');
+
+is($field->is_empty, 0, 'is_empty 3');
+
+$field->input_value('');
+
+is($field->is_empty, 1, 'is_empty 4');

@@ -10,111 +10,14 @@ use Rose::HTML::Form::Field::Hidden;
 use Rose::HTML::Form::Field;
 our @ISA = qw(Rose::HTML::Form::Field);
 
+#require Rose::HTML::Form::Field::Repeatable;
+
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
 # Variables for use in regexes
 our $FF_SEPARATOR_RE = quotemeta FF_SEPARATOR;
 
-our $VERSION = '0.551';
-
-#
-# Class data
-#
-
-use Rose::Class::MakeMethods::Generic
-(
-  inheritable_hash =>
-  [
-    field_type_classes => { interface => 'get_set_all' },
-    _field_type_class  => { interface => 'get_set', hash_key => 'field_type_classes' },
-    _delete_field_type_class => { interface => 'delete', hash_key => 'field_type_classes' },
-  ],
-);
-
-__PACKAGE__->field_type_classes
-(
-  'text'               => 'Rose::HTML::Form::Field::Text',
-  'scalar'             => 'Rose::HTML::Form::Field::Text',
-  'char'               => 'Rose::HTML::Form::Field::Text',
-  'character'          => 'Rose::HTML::Form::Field::Text',
-  'varchar'            => 'Rose::HTML::Form::Field::Text',
-  'string'             => 'Rose::HTML::Form::Field::Text',
-
-  'text area'          => 'Rose::HTML::Form::Field::TextArea',
-  'textarea'           => 'Rose::HTML::Form::Field::TextArea',
-  'blob'               => 'Rose::HTML::Form::Field::TextArea',
-
-  'checkbox'           => 'Rose::HTML::Form::Field::Checkbox',
-  'check'              => 'Rose::HTML::Form::Field::Checkbox',
-
-  'radio button'       => 'Rose::HTML::Form::Field::RadioButton',
-  'radio'              => 'Rose::HTML::Form::Field::RadioButton',
-
-  'checkboxes'         => 'Rose::HTML::Form::Field::CheckboxGroup',
-  'checks'             => 'Rose::HTML::Form::Field::CheckboxGroup',
-  'checkbox group'     => 'Rose::HTML::Form::Field::CheckboxGroup',
-  'check group'        => 'Rose::HTML::Form::Field::CheckboxGroup',
-
-  'radio buttons'      => 'Rose::HTML::Form::Field::RadioButton',
-  'radios'             => 'Rose::HTML::Form::Field::RadioButtonGroup',
-  'radio button group' => 'Rose::HTML::Form::Field::RadioButtonGroup',
-  'radio group'        => 'Rose::HTML::Form::Field::RadioButtonGroup',
-
-  'pop-up menu'        => 'Rose::HTML::Form::Field::PopUpMenu',
-  'popup menu'         => 'Rose::HTML::Form::Field::PopUpMenu',
-  'menu'               => 'Rose::HTML::Form::Field::PopUpMenu',
-
-  'select box'         => 'Rose::HTML::Form::Field::SelectBox',
-  'selectbox'          => 'Rose::HTML::Form::Field::SelectBox',
-  'select'             => 'Rose::HTML::Form::Field::SelectBox',
-
-  'submit'             => 'Rose::HTML::Form::Field::Submit',
-  'submit button'      => 'Rose::HTML::Form::Field::Submit',
-
-  'reset'              => 'Rose::HTML::Form::Field::Reset',
-  'reset button'       => 'Rose::HTML::Form::Field::Reset',
-
-  'file'               => 'Rose::HTML::Form::Field::File',
-  'upload'             => 'Rose::HTML::Form::Field::File',
-
-  'password'           => 'Rose::HTML::Form::Field::Password',
-
-  'hidden'             => 'Rose::HTML::Form::Field::Hidden',
-
-  'num'                => 'Rose::HTML::Form::Field::Numeric',
-  'number'             => 'Rose::HTML::Form::Field::Numeric',
-  'numeric'            => 'Rose::HTML::Form::Field::Numeric',
-
-  'int'                => 'Rose::HTML::Form::Field::Integer',
-  'integer'            => 'Rose::HTML::Form::Field::Integer',
-
-  'email'              => 'Rose::HTML::Form::Field::Email',
-
-  'phone'              => 'Rose::HTML::Form::Field::PhoneNumber::US',
-  'phone us'           => 'Rose::HTML::Form::Field::PhoneNumber::US',
-
-  'phone us split'     => 'Rose::HTML::Form::Field::PhoneNumber::US::Split',
-
-  'set'                => 'Rose::HTML::Form::Field::Set',
-
-  'time'               => 'Rose::HTML::Form::Field::Time',
-  'time split hms'     => 'Rose::HTML::Form::Field::Time::Split::HourMinuteSecond',
-
-  'time hours'         => 'Rose::HTML::Form::Field::Time::Hours',
-  'time minutes'       => 'Rose::HTML::Form::Field::Time::Minutes',
-  'time seconds'       => 'Rose::HTML::Form::Field::Time::Seconds',
-
-  'date'               => 'Rose::HTML::Form::Field::Date',
-  'datetime'           => 'Rose::HTML::Form::Field::DateTime',
-
-  'datetime range'     => 'Rose::HTML::Form::Field::DateTime::Range',
-
-  'datetime start'     => 'Rose::HTML::Form::Field::DateTime::StartDate',
-  'datetime end'       => 'Rose::HTML::Form::Field::DateTime::EndDate',
-
-  'datetime split mdy'    => 'Rose::HTML::Form::Field::DateTime::Split::MonthDayYear',
-  'datetime split mdyhms' => 'Rose::HTML::Form::Field::DateTime::Split::MDYHMS',
-);
+our $VERSION = '0.554';
 
 #
 # Object data
@@ -128,7 +31,20 @@ use Rose::Object::MakeMethods::Generic
   [
     'field_rank_counter',
   ],
+
+  array =>
+  [
+    'before_prepare_hooks'     => {},
+    'add_before_prepare_hooks' => { interface => 'push', hash_key => 'before_prepare_hooks' },
+
+    'after_prepare_hooks'     => {},
+    'add_after_prepare_hooks' => { interface => 'push', hash_key => 'after_prepare_hooks' },
+    'clear_prepare_hooks'     => { interface => 'clear', hash_key => 'after_prepare_hooks' },
+  ],
 );
+
+*add_before_prepare_hook    = \&add_before_prepare_hooks;
+*add_after_prepare_hook     = \&add_after_prepare_hooks;
 
 #
 # Class methods
@@ -137,6 +53,11 @@ use Rose::Object::MakeMethods::Generic
 sub prepare
 {
   my($self)  = shift;
+
+  foreach my $hook ($self->before_prepare_hooks)
+  {
+    $hook->($self, @_);
+  }
 
   my %args = @_;
 
@@ -152,18 +73,53 @@ sub prepare
   {
     $form->prepare(form_only => 1, @_);
   }
+
+  foreach my $hook ($self->after_prepare_hooks)
+  {
+    $hook->($self, @_);
+  }
 }
 
-sub field_type_class 
+sub add_prepare_hook
 {
-  my($class, $type) = (shift, shift);
-  return $class->_field_type_class(lc $type, @_) 
+  my($self) = shift;
+
+  if(@_ == 1)
+  {
+    $self->add_before_prepare_hook(@_);
+  }
+  elsif(@_ == 2)
+  {
+    my $where = shift;
+
+    unless($where eq 'before' || $where eq 'after')
+    {
+      Carp::croak "Illegal prepare hook position: $where";
+    }
+
+    my $method = "add_${where}_prepare_hook";
+
+    no strict 'refs';
+    $self->$method(@_);
+  }
+  else
+  {
+    Carp::croak "Incorrect number of arguments to add_prepare_hook()";
+  }
 }
 
-sub delete_field_type_class 
+sub prepare_hook
 {
-  my($class, $type) = (shift, shift);
-  return $class->_delete_field_type_class(lc $type, @_) 
+  my($self) = shift;
+  $self->clear_prepare_hooks;
+  $self->add_prepare_hook(@_);
+}
+
+BEGIN
+{
+  *field_type_classes      = \&Rose::HTML::Object::object_type_classes;
+  *field_type_class        = \&Rose::HTML::Object::object_type_class;
+  *delete_field_type_class = \&Rose::HTML::Object::delete_object_type_class;
 }
 
 #
@@ -317,6 +273,8 @@ sub add_fields
 
   my @added_fields;
 
+  @_ = @{$_[0]}  if(@_ == 1 && ref $_[0] eq 'ARRAY');
+
   while(@_)
   {
     my $arg = shift;
@@ -346,6 +304,10 @@ sub add_fields
       $self->field($field->local_name => $field);
       push(@added_fields, $field);
     }
+    #elsif(UNIVERSAL::isa($arg, 'Rose::HTML::Form::Field::Repeatable'))
+    #{
+    #  ...
+    #}
     else
     {
       my $field = shift;
@@ -386,9 +348,14 @@ sub add_fields
   return wantarray ? @added_fields : $added_fields[0];
 }
 
-*add_field = \&add_fields;
+sub add_field { shift->add_fields(@_) }
 
-sub compare_fields { $_[1]->name cmp $_[2]->name }
+sub compare_fields 
+{
+  my($self, $one, $two) = @_;
+  no warnings 'uninitialized';
+  $one->name cmp $two->name;
+}
 
 sub resync_field_names
 {
@@ -404,7 +371,7 @@ sub resync_field_names
 
 sub children 
 {
-  Carp::croak "children() does not take any arguments"  if(@_ > 1);
+  Carp::croak "Cannot set children() for a pseudo-group ($_[0])"  if(@_ > 1);
   return wantarray ? shift->fields() : (shift->fields() || []);
 }
 
@@ -455,6 +422,32 @@ sub fields
 
   return wantarray ? @{$self->{'field_list'}} : $self->{'field_list'};
 }
+
+sub fields_as_children
+{
+  my($self) = shift;
+
+  Carp::croak "Cannot directly set children() for a ", ref($self), 
+              ".  Use fields(), push_children(), pop_children(), etc."  if(@_);
+
+  my @children;
+
+  foreach my $field ($self->fields)
+  {
+    if($field->is_flat_group)
+    {
+      push(@children, $field->items);
+    }
+    else
+    {
+      push(@children, $field);
+    }
+  }
+
+  return wantarray ? @children : \@children;
+}
+
+*immutable_children = \&fields_as_children;
 
 sub num_fields
 {
@@ -531,6 +524,12 @@ sub _clear_field_generated_values
   $self->{'field_list'}  = undef;
   $self->{'field_monikers'} = undef;
   $self->invalidate_field_caches;
+
+  # XXX: This is super-incestuous
+  if(my $parent_form = $self->parent_form)
+  {
+    $parent_form->_clear_field_generated_values;
+  }
 }
 
 sub hidden_field

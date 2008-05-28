@@ -9,19 +9,23 @@ use Rose::URI;
 use Scalar::Util();
 use URI::Escape qw(uri_escape);
 
+use Rose::HTML::Util();
 use Rose::HTML::Object::Errors qw(:form);
 
 use Rose::HTML::Form::Field;
 use Rose::HTML::Form::Field::Collection;
-our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
+use Rose::HTML::Object::WithWrapAroundChildren;
+our @ISA = qw(Rose::HTML::Object::WithWrapAroundChildren
+              Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-our $VERSION = '0.5521';
+require Rose::HTML::Form::Repeatable;
+
+our $VERSION = '0.554';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
 (
   'prepare',
-  'children',
   'hidden_field',
   'hidden_fields',
   'html_hidden_field',
@@ -71,6 +75,7 @@ use Rose::Object::MakeMethods::Generic
   [
     'uri_separator',
     'form_rank_counter',
+    'recursive_init_fields',
   ],
 
   boolean => 
@@ -86,10 +91,21 @@ use Rose::Object::MakeMethods::Generic
 
 use Rose::Class::MakeMethods::Generic
 (
-  inheritable_scalar => '_delegate_to_subforms', 
+  inheritable_scalar => 
+  [
+    '_delegate_to_subforms',
+  ],
+
+  inheritable_boolean => 
+  [
+    'default_recursive_init_fields',
+    'default_trim_xy_params',
+  ],
 );
 
 __PACKAGE__->delegate_to_subforms('compile');
+__PACKAGE__->default_recursive_init_fields(0);
+__PACKAGE__->default_trim_xy_params(1);
 
 #
 # Class methods
@@ -111,6 +127,28 @@ sub new
   $self->init(@_);
 
   return $self;
+}
+
+sub init_recursive_init_fields { shift->default_recursive_init_fields }
+
+sub trim_xy_params
+{
+  my($self) = shift;
+
+  if(@_)
+  {
+    my $val = $self->{'trim_xy_params'} = $_[0] ? 1 : 0;
+
+    foreach my $form ($self->forms)
+    {
+      $form->trim_xy_params($val);
+    }
+
+    return $val;
+  }
+
+  return defined $self->{'trim_xy_params'} ?
+    $self->{'trim_xy_params'} : ref($self)->default_trim_xy_params;
 }
 
 sub delegate_to_subforms
@@ -201,7 +239,52 @@ sub validate_field_html_attrs
 sub _is_full  { 0 }
 sub _set_input_value { }
 sub is_full  { 0 }
-sub is_empty { 0 }
+
+sub is_repeatable { $_[0]->is_repeatable_form || $_[0]->is_repeatable_field ? 1 : 0 }
+sub is_repeatable_field { 0 }
+sub is_repeatable_form  { 0 }
+
+sub is_empty
+{
+  my($self) = shift;
+
+  foreach my $field ($self->fields)
+  {
+    return 0  unless($field->is_empty);
+  }
+
+  foreach my $form ($self->forms)
+  {
+    return 0  unless($form->is_empty);
+  }
+
+  return 1;
+}
+
+sub empty_is_ok
+{
+  my($self) = shift;
+
+  if(@_)
+  {
+    foreach my $form ($self->forms)
+    {
+      $form->empty_is_ok(@_);
+    }
+
+    return $self->SUPER::empty_is_ok(@_);
+  }
+
+  my $ok = $self->SUPER::empty_is_ok(@_);
+  return $ok  unless($ok);
+
+  foreach my $form ($self->forms)
+  {
+    return 0  unless($form->empty_is_ok);
+  }
+
+  return $ok;
+}
 
 # Empty contents instead of replacing ref
 sub delete_params { %{shift->{'params'}} = () }
@@ -327,12 +410,15 @@ sub params
       croak(ref($self), '::params() - got odd number of arguments: ');
     }
 
-    foreach my $param (keys %{$self->{'params'}})
+    if($self->trim_xy_params)
     {
-      if($param =~ /^(.+)\.[xy]$/)
+      foreach my $param (keys %{$self->{'params'}})
       {
-        delete $self->{'params'}{$param};
-        $self->{'params'}{$1} = 1;
+        if($param =~ /^(.+)\.[xy]$/)
+        {
+          delete $self->{'params'}{$param};
+          $self->{'params'}{$1} = 1;
+        }
       }
     }
 
@@ -596,6 +682,8 @@ sub validate
   {
     foreach my $form ($self->forms)
     {
+      next  if($form->is_empty && $form->empty_is_ok);
+
       $Debug && warn "Validating sub-form ", $form->form_name, "\n";
 
       unless($form->validate(%args))
@@ -608,6 +696,8 @@ sub validate
 
   unless($args{'form_only'})
   {
+    return 1  if($self->is_empty && $self->empty_is_ok);
+
     foreach my $field ($self->fields)
     {
       if($cascade && $field->parent_form ne $self)
@@ -657,9 +747,24 @@ sub init_fields
 
   $self->clear()  unless($args{'no_clear'});
 
-  foreach my $field ($self->fields)
+  if(exists $args{'recursive'} ? $args{'recursive'} : $self->recursive_init_fields)
   {
-    $self->_init_field($field);
+    foreach my $field ($self->local_fields)
+    {
+      $self->_init_field($field);
+    }
+
+    foreach my $form ($self->forms)
+    {
+      $form->init_fields;
+    }
+  }
+  else
+  {
+    foreach my $field ($self->fields)
+    {
+      $self->_init_field($field);
+    }
   }
 }
 
@@ -921,6 +1026,111 @@ sub increment_form_rank_counter
   return $rank;
 }
 
+sub repeatable_form
+{
+  my($self) = shift;
+
+  # Set form
+  if(@_ > 1)
+  {
+    my($name, $form) = (shift, shift);
+    $self->delete_repeatable_form($name);
+    return $self->add_repeatable_form($name => $form);
+  }
+
+  my $form = $self->form(@_) or return undef;
+  return undef  unless($form->is_repeatable);
+  return $form;
+}
+
+sub repeatable_forms
+{
+  my($self) = shift;
+
+  if(@_)
+  {
+    $self->delete_repeatable_forms;
+    $self->add_repeatable_forms(@_);
+    return unless(defined wantarray);
+  }
+
+  return wantarray ?
+    (grep { $_->is_repeatable_form } $self->forms(@_)) :
+    [ grep { $_->is_repeatable_form } $self->forms(@_) ];
+}
+
+sub add_repeatable_forms
+{
+  my($self) = shift;
+
+  my @form_args;
+
+  while(@_)
+  {
+    my $arg = shift;
+
+    if(UNIVERSAL::isa($arg, 'Rose::HTML::Form'))
+    {
+      push(@form_args,
+        $arg->form_name =>
+        {
+          form       => $arg,
+          repeatable => undef,
+        });
+    }
+    elsif(!ref $arg)
+    {
+      if(UNIVERSAL::isa($_[0], 'Rose::HTML::Form'))
+      {
+        my $form = shift;
+
+        push(@form_args,
+          $arg =>
+          {
+            form       => $form,
+            repeatable => undef,
+          });
+      }
+      elsif(ref $_[0] eq 'HASH')
+      {
+        my $spec = shift;
+        $spec->{'repeatable'} = undef  unless(exists $spec->{'repeatable'});
+        push(@form_args, $arg => $spec);
+      }
+      else
+      {
+        croak "Invalid argument pair passed to add_repeatable_forms() - $arg, $_[0]";
+      }
+    }
+    else
+    {
+      croak "Invalid argument passed to add_repeatable_forms() - $arg";
+    }
+  }
+
+  return $self->add_forms(@form_args);
+}
+
+sub add_repeatable_form { shift->add_repeatable_forms(@_) }
+
+sub form_depth
+{
+  my($self) = shift;
+
+  if(@_)
+  {
+    return $self->{'form_depth'} = shift;
+  }
+
+  return $self->{'form_depth'}  if(defined $self->{'form_depth'});
+
+  my $depth = 0;
+  my $form = $self;
+  $depth++ while($form = $form->parent_form);
+
+  return $self->{'form_depth'} = $depth;
+}
+
 sub add_forms
 {
   my($self) = shift;
@@ -944,6 +1154,7 @@ sub add_forms
 
       $name = $form->form_name;
 
+      croak "Cannot add form $form without a name"  unless(defined $name);
       croak "Cannot add form with the same name as an existing field: $name"
         if($self->field($name));
 
@@ -966,6 +1177,44 @@ sub add_forms
         {
           croak "Cannot nest a form within itself";
         }
+      }
+      elsif(ref $form eq 'HASH')
+      {
+        unless(exists $form->{'repeatable'})
+        {
+          croak "Missing key 'repeatable' in hash reference specification for form named '$name'";
+        }
+
+        my $repeat_spec = $form;
+
+        if(ref $form->{'repeatable'})
+        {
+          @$repeat_spec{keys %{$form->{'repeatable'}}} = values %{$form->{'repeatable'}};
+        }
+        else
+        {
+          $repeat_spec->{'default_count'} = $form->{'repeatable'}
+            unless(exists $repeat_spec->{'default_count'});
+        }
+
+        delete $form->{'repeatable'};
+
+        $repeat_spec->{'prototype_form_spec'} = delete $repeat_spec->{'spec'}
+          if($repeat_spec->{'spec'});
+
+        $repeat_spec->{'prototype_form_spec'} = delete $repeat_spec->{'form_spec'}
+          if($repeat_spec->{'form_spec'});
+
+        $repeat_spec->{'prototype_form_class'} = delete $repeat_spec->{'class'}
+          if($repeat_spec->{'class'});
+
+        $repeat_spec->{'prototype_form_class'} = delete $repeat_spec->{'form_class'}
+          if($repeat_spec->{'form_class'});
+
+        $repeat_spec->{'prototype_form'} = delete $repeat_spec->{'form'}
+          if($repeat_spec->{'form'});
+
+        $form = ref($self)->object_type_class('repeatable form')->new(%$repeat_spec);
       }
       else
       {
@@ -996,8 +1245,16 @@ sub add_forms
     push(@added_forms, $form);
   }
 
+  my $depth = $self->form_depth + 1;
+
   foreach my $form (@added_forms)
   {
+    if($form->recursive_init_fields || $form->isa('Rose::HTML::Form::Repeatable'))
+    {
+      $self->recursive_init_fields(1);
+    }
+
+    $form->form_depth($depth);
     $form->resync_field_names;
   }
 
@@ -1037,11 +1294,23 @@ sub resync_fields_by_name
   }
 }
 
-sub compare_forms { no warnings 'uninitialized'; $_[1]->rank <=> $_[2]->rank }
+sub compare_forms
+{
+  my($self, $one, $two) = @_;
+  no warnings 'uninitialized';
+  return $one->form_depth <=> $two->form_depth || $one->rank <=> $two->rank;
+}
 
 sub forms
 {
   my($self) = shift;
+
+  if(@_)
+  {
+    $self->delete_forms;
+    $self->add_forms(@_);
+    return unless(defined wantarray);
+  }
 
   if(my $forms = $self->{'form_list'})
   {
@@ -1077,10 +1346,77 @@ sub form_names
   return wantarray ? @{$self->{'form_names'}} : $self->{'form_names'};
 }
 
+sub delete_repeatable_forms 
+{
+  my($self) = shift;
+
+  foreach my $form (grep { $_->is_repeatable_form } $self->forms)
+  {
+    delete $self->{'forms'}{$form->form_name};
+  }
+
+  $self->_clear_form_generated_values;
+
+  return;
+}
+
+sub delete_repeatable_form
+{
+  my($self, $name) = @_;
+
+  $name = $name->form_name  if(UNIVERSAL::isa($name, 'Rose::HTML::Form'));
+
+  if(exists $self->{'forms'}{$name} && $self->{'forms'}{$name}->is_repeatable_form)
+  {
+    my $form = delete $self->{'forms'}{$name};
+
+    $self->_clear_form_generated_values;
+
+    return $form;
+  }
+
+  return undef;
+}
+
+sub delete_repeatable_fields 
+{
+  my($self) = shift;
+
+  foreach my $form (grep { $_->is_repeatable_field } $self->forms)
+  {
+    delete $self->{'forms'}{$form->form_name};
+  }
+
+  $self->_clear_form_generated_values;
+
+  return;
+}
+
+sub delete_repeatable_field
+{
+  my($self, $name) = @_;
+
+  $name = $name->form_name  if(UNIVERSAL::isa($name, 'Rose::HTML::Form'));
+
+  if(exists $self->{'forms'}{$name} && $self->{'forms'}{$name}->is_repeatable_field)
+  {
+    $self->_clear_form_generated_values;
+    return delete $self->{'forms'}{$name};
+  }
+
+  return undef;
+}
+
 sub delete_forms 
 {
   my($self) = shift;
-  $self->{'forms'} = {};
+
+  # Leave the repeatable fields which are implemented as a special case of repeatable forms
+  foreach my $form (grep { !$_->is_repeatable_field } $self->forms)
+  {
+    delete $self->{'forms'}{$form->form_name};
+  }
+
   $self->form_rank_counter(undef);
   $self->_clear_form_generated_values;
   return;
@@ -1094,8 +1430,11 @@ sub delete_form
 
   if(exists $self->{'forms'}{$name})
   {
+    my $form = delete $self->{'forms'}{$name};
+
     $self->_clear_form_generated_values;
-    return delete $self->{'forms'}{$name};
+
+    return $form;
   }
 
   return undef;
@@ -1126,6 +1465,7 @@ sub _clear_form_generated_values
   my($self) = shift;
   $self->{'form_list'}   = undef;
   $self->{'form_names'}  = undef;
+  $self->{'form_depth'}  = undef;
   $self->_clear_field_generated_values;
 }
 
@@ -1169,12 +1509,19 @@ sub local_field
   return $self->{'fields'}{$name} || $self->{'fields_by_name'}{$name};
 }
 
+sub local_fields
+{
+  my($self) = shift;
+  return values %{ $self->{'fields'} || {} };
+}
+
 sub delete_fields 
 {
   my($self) = shift;
   $self->_clear_field_generated_values;
   $self->{'fields'} = {};
   $self->{'fields_by_name'} = {};
+  $self->delete_repeatable_fields;
   $self->field_rank_counter(undef);
   return;
 }
@@ -1228,6 +1575,12 @@ sub fields
 {
   my($self) = shift;
 
+  if(@_)
+  {
+    $self->delete_fields;
+    $self->add_fields(@_);
+  }
+
   if(my $fields = $self->{'field_list'})
   {
     return wantarray ? @$fields : $fields;
@@ -1254,6 +1607,20 @@ sub fields
   ];
 
   return wantarray ? @{$self->{'field_list'}} : $self->{'field_list'};
+}
+
+sub fields_depth_first
+{
+  my($self) = shift;
+
+  my @fields = sort { $a->rank <=> $b->rank } $self->local_fields;
+
+  foreach my $form ($self->forms)
+  {
+    push(@fields, $form->fields_depth_first);
+  }
+
+  return wantarray ? @fields : \@fields;
 }
 
 sub field_monikers
@@ -1409,6 +1776,137 @@ sub form
   return $parent_form->form($local_name);
 }
 
+sub _html_table
+{
+  my($self, %args) = @_;
+
+  my $xhtml       = delete $args{'_xhtml'} ? 'xhtml' : 'html';
+  my $xhtml_field = "${xhtml}_field";
+  my $xhtml_label = "${xhtml}_label";
+
+  my $max_button_depth = 
+    exists $args{'max_button_depth'} ? $args{'max_button_depth'} : 1;
+
+  $args{'class'} = defined $args{'class'} ? 
+    "$args{'class'} form" : 'form';
+
+  $args{'tr'} ||= {};
+  $args{'td'} ||= {};
+
+  $args{'table'}{'class'} = defined $args{'table'}{'class'} ? 
+    "$args{'table'}{'class'} form" : 
+    defined $args{'class'} ? $args{'class'} : undef;
+
+  $args{'tr'}{'class'} = defined $args{'tr'}{'class'} ? 
+    "$args{'tr'}{'class'} field" : 'field';    
+
+  my $html = join('', map { $_->$xhtml() } $self->pre_children);
+
+  $html .= join("\n", map { $_->$xhtml_field() } 
+                      grep { $_->isa('Rose::HTML::Form::Field::Hidden') } $self->fields);
+
+  $html .= "\n\n"  if($html);
+
+  $html .= '<table' . Rose::HTML::Util::html_attrs_string($args{'table'}) . ">\n";
+
+  my $form_start = "start_$xhtml";
+  my $form_end   = "end_$xhtml";
+
+  my $i = 1;
+
+  my @buttons;
+
+  foreach my $field ($self->fields_depth_first)
+  {
+    if($field->is_button)
+    {
+      next  if($field->field_depth > $max_button_depth);
+
+      if($field->field_depth == 1)
+      {
+        push(@buttons, $field);
+        next;
+      }
+    }
+
+    if($field->isa('Rose::HTML::Form::Field::File'))
+    {
+      $form_start = "start_multipart_$xhtml";
+    }
+
+    my $odd_even = $i++ % 2 ? 'odd' : 'even';
+
+    local $args{'tr'}{'class'} = "field-$odd_even";
+    local $args{'td'}{'class'} = $args{'td'}{'class'} ? "$args{'td'}{'class'} label" : 'label';
+
+    my $label = $field->$xhtml_label();
+
+    unless($label)
+    {
+      my $name = $field->name;
+
+      for($name)
+      {
+        tr[_.][  ];
+        s/\b(\w)/\u$1/g;
+      }
+
+      $label = Rose::HTML::Label->new(contents => Rose::HTML::Util::escape_html($name));
+
+      if($field->html_attr_exists('id'))
+      {
+        $label->for($field->html_attr('id'));
+      }
+
+      $label = $label->$xhtml();
+    }
+
+    if($field->is_button)
+    {
+      local $args{'td'}{'colspan'} = 2;
+      $html .= '<tr' . Rose::HTML::Util::html_attrs_string($args{'tr'}) . ">\n" .
+               '<td' . Rose::HTML::Util::html_attrs_string($args{'td'}) . '>' .
+               $field->$xhtml_field . "</td>\n</tr>\n";
+    }
+    else
+    {
+      $html .= '<tr' . Rose::HTML::Util::html_attrs_string($args{'tr'}) . ">\n" .
+               '<td' . Rose::HTML::Util::html_attrs_string($args{'td'}) . ">$label</td>\n";
+
+      $args{'td'}{'class'} =~ s/(?:^| )label$//;
+      $args{'td'}{'class'} = $args{'td'}{'class'} ? "$args{'td'}{'class'} field" : 'field';
+
+      $html .= '<td' . Rose::HTML::Util::html_attrs_string($args{'td'}) . '>' .
+               $field->$xhtml() .
+               "</td>\n</tr>\n";
+    }
+  }
+
+  if(@buttons)
+  {
+    my $odd_even = $i++ % 2 ? 'odd' : 'even';
+
+    local $args{'tr'}{'class'} = "field-$odd_even buttons";
+    local $args{'td'}{'class'} = $args{'td'}{'class'} ? "$args{'td'}{'class'} label" : 'label';
+
+    local $args{'td'}{'colspan'} = 2;
+
+    $html .= '<tr' . Rose::HTML::Util::html_attrs_string($args{'tr'}) . ">\n" .
+             '<td' . Rose::HTML::Util::html_attrs_string($args{'td'}) . '>' .
+             join(' ', map { $_->$xhtml_field() } @buttons) .
+             "</td>\n</tr>\n";
+  }
+
+  $html .= "</table>\n\n" . join('', map { $_->$xhtml() } $self->post_children);
+
+  $html .= "\n\n"  unless($html =~ /\n\n\z/);
+
+  return $self->$form_start() . "\n\n$html" . $self->$form_end();
+}
+
+sub html_table  { shift->_html_table(@_) }
+sub xhtml_table { shift->_html_table(@_, _xhtml => 1) }
+
 sub app
 {
   my($self) = shift; 
@@ -1539,8 +2037,8 @@ Rose::HTML::Form - HTML form base class.
     return $ok  unless($ok);
 
     # Inter-field validation goes here
-    if($self->field('name')->internal_value ne 'John Doe' &&
-       $self->field('phone')->internal_value =~ /^555/)
+    if($self->field_value('name') ne 'John Doe' &&
+       $self->field_value('phone') =~ /^555/)
     {
       $self->error('Only John Doe can have a 555 phone number.');
       return 0;
@@ -1564,7 +2062,7 @@ Rose::HTML::Form - HTML form base class.
 
     # Now fill in the non-obvious details...
     # e.g., set alt phone to be the same as the regular phone
-    $person->alt_phone($self->field('phone')->internal_value);
+    $person->alt_phone($self->field_value('phone'));
 
     return $person;
   }
@@ -1638,6 +2136,22 @@ Compound fields (fields consisting of more than one HTML field, such as a month/
 Each form has a list of field objects.  Each field object is stored under a name, which may or may not be the same as the field name, which may or may not be the same as the "name" HTML attribute for any of the HTML tags that make up that field.
 
 Forms are validated by calling L<validate()|Rose::HTML::Form::Field/validate> on each field object.  If any individual field does not validate, then the form is invalid.  Inter-field validation is the responsibility of the form object.
+
+=head1 HIERARCHY
+
+Though L<Rose::HTML::Form> objects may have L<children|Rose::HTML::Object/children> just like any other L<Rose::HTML::Object>-derived object, the L<fields|/fields> that make up the form are treated like "immutable children" in that they can never be removed using the standard child-related APIs.  Instead, the fields exist in the middle of any other children.
+
+L<Pushing|Rose::HTML::Object/push_children> a child adds it after the list of fields. L<Unshifting|Rose::HTML::Object/unshift_children> a child adds it before the list of fields.  L<Popping|Rose::HTML::Object/pop_children> or L<shifting|Rose::HTML::Object/shift_children> children will pull children through, past the fields, to exit the list of children at either end.  In other words, children manipulated using the child object APIs will "flow around" the list of fields.
+
+If a particular field is a group of sibling HTML elements with no real parent HTML element (e.g., a L<radio button group|Rose::HTML::Form::Field::RadioButtonGroup>), then the individual sibling items will be flattened out into the list returned by the L<children|Rose::HTML::Object/children> method.  
+
+If, on the other hand, a field has a true parent/child relationship (e.g., a L<select box|Rose::HTML::Form::Field::SelectBox> which contains zero or more L<options|Rose::HTML::Form::Field::Option>) then the items it contains are not flattened by the L<children|Rose::HTML::Object/children> method.
+
+For example, if a form has three fields, a text field, a checkbox group with three checkboxes, and a select box with three options, then the L<children|Rose::HTML::Object/children> method will return five objects: the L<text field|Rose::HTML::Form::Field::Text> object, the three L<checkboxes|Rose::HTML::Form::Field::Checkbox> objects, and a L<select box|Rose::HTML::Form::Field::SelectBox> object.
+
+See the L<hierarchy section|Rose::HTML::Form::Field/HIERARCHY> of the L<Rose::HTML::Form::Field> documentation for more information about how fields made up of multiple HTML tags are treated with respect to parent/child relationships.
+
+Finally, note that L<nested forms|/"NESTED FORMS"> do not affect the parent/child hierarchy presented by the child-related methods inherited from L<Rose::HTML::Object> since the fields contained in nested forms are flattened out into the field list of parent form, as described in the next section.
 
 =head1 NESTED FORMS
 
@@ -1765,6 +2279,10 @@ Required attributes (default values in parentheses):
 
 =over 4
 
+=item B<default_recursive_init_fields [BOOL]>
+
+Get or set a boolean value that determines the default value of the L<recursive_init_fields|/recursive_init_fields> object attribute.  The default value is false.
+
 =item B<delegate_to_subforms [SETTING]>
 
 Get or set the value that determines how (or if) forms of this class delegate unresolved method calls to L<sub-forms|/"NESTED FORMS">.  If a method is called on a form of this class, and that method does not exist in this class or any other class in its inheritance hierarchy, then the method may optionally be delegated to a L<sub-forms|/"NESTED FORMS">.  Valid values for SETTING are:
@@ -1799,6 +2317,10 @@ If no sub-form can handle the method, then a fatal "unknown method" error occurs
 
 The default value for SETTING is B<compile>.  See the  L<nested forms|/"NESTED FORMS"> section for some examples of sub-form delegation.
 
+=item B<default_trim_xy_params [BOOL]>
+
+Get or set a boolean value that is used as the default value of the L<trim_xy_params|/trim_xy_params> object attribute.  The default value is true.
+
 =back
 
 =head1 CONSTRUCTOR
@@ -1821,7 +2343,7 @@ Convenience alias for L<add_fields()|/add_fields>.
 
 =item B<add_fields ARGS>
 
-Add the fields specified by ARGS to the list of fields contained in this form.  Valid formats for elements of ARGS are:
+Add the fields specified by ARGS to the list of fields contained in this form.  ARGS may be a list or a reference to an array.  Valid formats for elements of ARGS are:
 
 =over 4 
 
@@ -1892,27 +2414,24 @@ Valid formats for elements of ARGS are:
 
 =item B<Form objects>
 
-If an argument is "isa" L<Rose::HTML::Form>, then it is added to the list of forms, stored under the name returned by the form's L<form_name|/form_name> method.
-
-=item B<Form name/object pairs>
-
-A simple scalar followed by an object that "isa" L<Rose::HTML::Form> has its L<form_name|/form_name> set to the specified name and then is stored under that name.
-
-If the name contains any dots (".") it will be taken as a hierarchical name and the form will be added to the specified sub-form under an unqualified name consisting of the final part of the name.  (See examples below.)
-
-=back
-
-Each form's L<parent_form|/parent_form> is set to the form object it was added to.  If the form's L<rank|/rank> is undefined, it's set to the value of the form's L<form_rank_counter|/field_rank_counter> attribute and the rank counter is incremented.
-
-Adding a form with the same name as an existing field will cause a fatal error.
-
-Examples:
+If an argument is "isa" L<Rose::HTML::Form>, then it is added to the list of forms, stored under the name returned by the form's L<form_name|/form_name> method.  Example:
 
     $a_form = Rose::HTML::Form->new(...);
     $b_form = Rose::HTML::Form->new(...);
 
     # Object arguments
     $form->add_forms($a_form, $b_form);
+
+=item B<Form name/object pairs>
+
+A simple scalar followed by an object that "isa" L<Rose::HTML::Form> has its L<form_name|/form_name> set to the specified name and then is stored under that name.
+
+If the name contains any dots (".") it will be taken as a hierarchical name and the form will be added to the specified sub-form under an unqualified name consisting of the final part of the name.  
+
+Examples:
+
+    $a_form = Rose::HTML::Form->new(...);
+    $b_form = Rose::HTML::Form->new(...);
 
     # Name/object pairs
     $form->add_forms(a => $a_form, b => $b_form);
@@ -1932,6 +2451,65 @@ Examples:
     # Add $z_form to $w_form->form('x')->form('y') under the name 'z'
     $w_form->add_form('x.y.z' => $z_form);
 
+=item B<Form name/hashref pairs>
+
+A simple scalar followed by a reference to a hash containing a specification for a form.  Currently, the only kind of form that can be specified this way is a L<repeatable form|Rose::HTML::Form::Repeatable>, in which case the hash reference is known as a "repeat spec".  In order to be correctly detected as a repeat spec, the hash I<must> contain a key named C<repeatable>.
+
+The repeat spec is coerced into a set of name/value pairs that are passed to the L<Rose::HTML::Form::Repeatable> constructor call.  The coercion exists to allow shorter, more friendly names to be used in the context of a repeat spec.  These names are converted into the names of valid L<Rose::HTML::Form::Repeatable> object methods.  The following coercion rules are applied to the repeat spec hash reference:
+
+=over 4
+
+=item * If the value of the C<repeatable> key is reference to a hash, the keys and values of that hash are folded into the repeat spec.  Otherwise, if a key named C<default_count> does not exist in the repeat spec, then the value of the C<repeatable> key is used as the value of the L<default_count|Rose::HTML::Form::Repeatable/default_count> parameter.
+
+=item * The C<spec> and C<form_spec> parameters are aliases for the L<prototype_form_spec|Rose::HTML::Form::Repeatable/prototype_form_spec> parameter.
+
+=item * The C<class> and C<form_class> parameters are aliases for the L<prototype_form_class|Rose::HTML::Form::Repeatable/prototype_form_class> parameter.
+
+=item * The C<form> parameter is an alias for the L<prototype_form|Rose::HTML::Form::Repeatable/prototype_form> parameter.
+
+=back
+
+Here are some example name/hashref pairs suitable for passing as arguments to the L<add_forms|/add_forms> method:
+
+    # Using a form class name
+    emails =>
+    {
+      form_class => 'EmailForm',
+      repeatable => 3, # Default count is 3.
+    }
+
+    # Using a form class name and form spec
+    emails =>
+    {
+      form_class => 'EmailForm',
+      form_spec  => { empty_is_ok => 1 },
+      repeatable => 3, # Default count is 3.
+    }
+
+    # Using a generic form class and form spec to specify the 
+    # contents of a repeated form "inline" in the repeat spec
+    nicknames =>
+    {
+      form_class => 'My::HTML::Form',
+      form_spec  => { fields => [ nick => { type => 'text' } ] },
+      repeatable => 3, # Default count is 3.
+    }
+
+    # Using a prototype object
+    nicknames =>
+    {
+      form          => NickNameForm->new,
+      default_count => 0, # Explicitly set default count to 0.
+      repeatable    => 1, # This key must be present even though
+                          # the default count is set above.
+    }
+
+=back
+
+Each form's L<parent_form|/parent_form> is set to the form object it was added to.  If the form's L<rank|/rank> is undefined, it's set to the value of the form's L<form_rank_counter|/field_rank_counter> attribute and the rank counter is incremented.
+
+Adding a form with the same name as an existing field will cause a fatal error.
+
 =item B<add_param_value NAME, VALUE>
 
 Add VALUE to the parameter named NAME.  Example:
@@ -1946,6 +2524,32 @@ Add VALUE to the parameter named NAME.  Example:
 =item B<app [OBJECT]>
 
 Get or set a L<weakened|Scalar::Util/weaken> reference to the application object that "owns" this form.
+
+=item B<add_repeatable_form ARGS>
+
+This method is an alias for the L<add_repeatable_forms()|/add_repeatable_forms> method.
+
+=item B<add_repeatable_forms ARGS>
+
+Add the repeatable forms specified by ARGS to the list of sub-forms contained in this form.  This method takes arguments in the same format as the L<add_forms|/add_forms> method, except that all argument types are coerced into a form that will cause L<add_forms|/add_forms> to recognize it as a L<repeatable form|Rose::HTML::Form::Repeatable>.  This is a convenient way to add repeatable forms without having to include the C<repeatable> key in your repeat spec.  (See the documentation for the L<add_forms|/add_forms> method for more information.)
+
+Examples
+
+    $form->add_repeatable_forms
+    (
+      # Object argument
+      EmailForm->new(...), 
+
+      # Name/object pair
+      colors => ColorForm->new(...),
+
+      # Name/hashref pair. (Note: no "repeatable" key needed)
+      nicknames => 
+      {
+        form          => NickNameForm->new,
+        default_count => 2,
+      },
+    );
 
 =item B<build_on_init [BOOL]>
 
@@ -2041,6 +2645,18 @@ If VALUES are also passed, then VALUES are deleted from the set of values held b
 
 Delete all parameters.
 
+=item B<delete_repeatable_form NAME>
+
+Delete the repeatable form stored under the name NAME.  If NAME "isa" L<Rose::HTML::Form>, then the L<form_name|/form_name> method is called on it and the return value is used as NAME.
+
+=item B<delete_repeatable_forms>
+
+Delete all repeatable sub-forms.
+
+=item B<empty_is_ok [BOOL]>
+
+Get or set a boolean value that indicates whether or not L<validate|/validate> will be allowed to return true if every L<field|/fields> in the form is empty, even if some of them are L<required|Rose::HTML::Form::Field/required>.  The default value is false.
+
 =item B<end_html>
 
 Returns the HTML required to end the form.
@@ -2063,9 +2679,15 @@ Get or set the field specified by NAME.  If only a NAME argument is passed, then
 
 If both NAME and VALUE arguments are passed, then the VALUE must be a L<Rose::HTML::Form::Field> or a reference to a hash whose contents are as described in the documentation for the L<add_fields|/add_fields> method. 
 
-=item B<fields>
+=item B<fields [FIELDS]>
 
-Returns an ordered list of this form's field objects in list context, or a reference to this list in scalar context.  The order of the fields matches the order of the field names returned by the L<field_monikers|/field_monikers> method.
+If FIELDS are passed, this method L<deletes all existing fields|/delete_fields> and then calls L<add_fields|/add_fields>, passing all arguments.
+
+The return value is an ordered list of this form's field objects in list context, or a reference to this list in scalar context.  The order of the fields matches the order of the field names returned by the L<field_monikers|/field_monikers> method.
+
+=item B<fields_depth_first>
+
+Returns a list (in list context) or reference to an array (in scalar context) of this form's field objects ordered according to a depth-first traversal of all L<sub-forms|/"NESTED FORMS">.  Fields within a given form are ordered by L<rank|Rose::HTML::Form::Field/rank>, and all fields at a given level precede any sub-forms nested under that level.
 
 =item B<field_monikers>
 
@@ -2117,7 +2739,7 @@ The default mapping of type names to class names is:
   'checkbox group'     => Rose::HTML::Form::Field::CheckboxGroup
   'check group'        => Rose::HTML::Form::Field::CheckboxGroup
 
-  'radio buttons'      => Rose::HTML::Form::Field::RadioButton
+  'radio buttons'      => Rose::HTML::Form::Field::RadioButtonGroup
   'radios'             => Rose::HTML::Form::Field::RadioButtonGroup
   'radio button group' => Rose::HTML::Form::Field::RadioButtonGroup
   'radio group'        => Rose::HTML::Form::Field::RadioButtonGroup
@@ -2211,9 +2833,11 @@ If both NAME and OBJECT are passed, a new sub-form is added under NAME.
 
 NAME is a fully-qualified sub-form name.  Components of the hierarchy are separated by dots (".").  OBJECT must be an object that inherits from L<Rose::HTML::Form>.
 
-=item B<forms>
+=item B<forms [FORMS]>
 
-Returns an ordered list of this form's sub-form objects (if any) in list context, or a reference to this list in scalar context.  The order of the form matches the order of the form names returned by the L<form_names|/form_names> method.
+If FORMS are passed, this method L<deletes all existing forms|/delete_forms> and then calls L<add_forms|/add_forms>, passing all arguments.
+
+The return value is an ordered list of this form's sub-form objects (if any) in list context, or a reference to this list in scalar context.  The order of the forms matches the order of the form names returned by the L<form_names|/form_names> method.
 
 See the L<nested forms|/"NESTED FORMS"> section to learn more about nested forms.
 
@@ -2239,7 +2863,7 @@ If L<coalesce_hidden_fields()|/coalesce_hidden_fields> is true, then each compou
 
 Returns the HTML serialization of the fields returned by L<hidden_fields()|/hidden_fields>, joined by newlines.
 
-=item B<init_fields [ARGS]>
+=item B<init_fields [PARAMS]>
 
 Initialize the fields based on L<params()|/params>.  In general, this works as you'd expect, but the details are a bit complicated.
 
@@ -2247,13 +2871,29 @@ The intention of L<init_fields()|/init_fields> is to set field values based sole
 
 In general, default values for fields exist for the purpose of displaying the HTML form with certain items pre-selected or filled in.  In a typical usage scenario, those default values will end up in the web browser form submission and, eventually, as as an explicit part of part L<params()|/params>, so they are not really ignored.
 
-But to preserve the intended functionality of L<init_fields()|/init_fields>, the first thing this method does is L<clear()|/clear> the form. If a C<no_clear> parameter with a true value is passed as part of ARGS, then this step is skipped.
+But to preserve the intended functionality of L<init_fields()|/init_fields>, the first thing this method does is L<clear()|/clear> the form.  (This is the default.  See the C<no_clear> parameter below.)
 
 If a parameter name exactly matches a field's name (note: the field's L<name|Rose::HTML::Form::Field/name>, which is not necessarily the the same as the name that the field is stored under in the form), then the (list context) value of that parameter is passed as the L<input_value()|Rose::HTML::Form::Field/input_value> for that field.
 
 If a field "isa" L<Rose::HTML::Form::Field::Compound>, and if no parameter exactly matches the L<name|Rose::HTML::Form::Field/name> of the compound field, then each subfield may be initialized by a parameter name that matches the subfield's L<name|Rose::HTML::Form::Field/name>.
 
 If a field is an "on/off" type of field (e.g., a radio button or checkbox), then the field is turned "on" only if the value of the parameter that matches the field's L<name|Rose::HTML::Form::Field/name> exactly matches (string comparison) the "value" HTML attribute of the field.  If not, and if L<params_exist()|/params_exist>, then the field is set to "off".  Otherwise, the field is not modified at all.
+
+PARAMS are name/value pairs.  Valid parameters are:
+
+=over 4
+
+=item B<no_clear BOOL>
+
+If true, the form is not L<clear()ed|/clear> before it is initialized.
+
+=item B<recursive BOOL>
+
+If true, this method is called recursively on any L<nested sub-forms|/"NESTED FORMS">.  If false, the fields in all nested sub-forms are still initialized as expected, but this is done by iterating over the "flattened" L<fields|/fields> list rather than through recursion.
+
+If this parameter is not passed, its value defaults to the value of the L<recursive_init_fields|/recursive_init_fields> object attribute.
+
+=back
 
 Examples:
 
@@ -2412,11 +3052,23 @@ The field names may not match up exactly with the object method names. In such c
       ...
     }
 
+=item B<is_empty>
+
+Returns true if each L<field|/fields> and L<nested form|/forms> in this form L<is_empty()|/is_empty>, false otherwise.
+
+=item B<is_repeatable>
+
+Returns true if this form is a L<repeatable form|Rose::HTML::Form::Repeatable>, false otherwise.
+
 =item B<local_field NAME [, VALUE]>
 
 Get or set a field that is an immediate child of the current form.  That is, it does not belong to a L<nested form|/"NESTED FORMS">.  If the field specified by NAME does not meet these criteria, then undef is returned.  In all other respects, this method behaves like the L<field|/field> method.
 
 Note that NAME should be the name as seen from the perspective of the form object upon which this method is called.  So a nested form can always address its local fields using their "short" (unqualified) names even if the form is actually nested within another form.
+
+=item B<local_fields>
+
+Returns a list of fields that are immediate children of the current form (i.e., fields that do not belong to a L<nested form|/"NESTED FORMS">).
 
 =item B<local_form NAME [, OBJECT]>
 
@@ -2609,6 +3261,26 @@ Returns a URI-escaped (but I<not> HTML-escaped) query string that corresponds to
 
 Get or set the form's rank.  This value can be used for any purpose that suits you, but by default it's used by the L<compare_forms|/compare_forms> method to sort sub-forms.
 
+=item B<recursive_init_fields [BOOL]>
+
+Get or set a boolean value indicating the default value of the <recursive> parameter to the L<init_fields|/init_fields> method.  This attribute, in turn, defaults to the value returned by the L<default_recursive_init_fields|/default_recursive_init_fields> class method.
+
+=item B<repeatable_form NAME [, OBJECT]>
+
+Get or set the repeatable sub-form named NAME.  If just NAME is passed, the specified repeatable sub-form object is returned.  If no such repeatable sub-form exists, undef is returnend.
+
+If both NAME and OBJECT are passed, a new repeatable sub-form is added under NAME.
+
+NAME is a fully-qualified sub-form name.  Components of the hierarchy are separated by dots (".").  OBJECT must be an object that inherits from L<Rose::HTML::Form::Repeatable>.
+
+=item B<repeatable_forms [FORMS]>
+
+If FORMS are passed, this method L<deletes all existing repeatable forms|/delete_repeatable_forms> and then calls L<add_repeatable_forms|/add_repeatable_forms>, passing all arguments.
+
+The return value is an ordered list of this form's repeatable sub-form objects (if any) in list context, or a reference to this list in scalar context.  The order of the forms matches the order of the form names returned by the L<form_names|/form_names> method.
+
+See the L<nested forms|/"NESTED FORMS"> section to learn more about nested forms, and the L<Rose::HTML::Form::Repeatable> documentation to learn more about repeatable forms.
+
 =item B<reset>
 
 Call L<reset()|Rose::HTML::Form::Field/reset> on each field object and set L<error()|Rose::HTML::Object/error> to undef.
@@ -2637,6 +3309,12 @@ Sets the "enctype" HTML attribute to "multipart/form-data", then returns the HTM
 
 Sets the "enctype" HTML attribute to "multipart/form-data", then returns the XHTML that will begin the form tag.
 
+=item B<trim_xy_params [BOOL]>
+
+Get or set a boolean value that determines whether or not L<params|/params> that end in ".x" or ".y" have that suffix trimmed off.  This is useful for handling query parameters created by some web browsers in response to clicks on image buttons and other image-based elements.  Setting this attribute will propagate the value down to all L<sub-forms|/"NESTED FORMS">.
+
+The default value is the value returned by the L<default_trim_xy_params|/default_trim_xy_params> class method.
+
 =item B<uri_base [STRING]>
 
 Get or set the URI of the form, minus the value of the "action" HTML attribute.  Although the form action can be a relative URI, I suggest that it be an absolute path at the very least, leaving the L<uri_base()|/uri_base> to be the initial part of the full URI returned by L<self_uri()|/self_uri>.  Example:
@@ -2655,7 +3333,7 @@ Get or set the character used to separate parameter name/value pairs in the retu
 
 Validate the form by calling L<validate()|Rose::HTML::Form::Field/validate> on each field and L<validate()|/validate> on each each L<sub-form|/"NESTED FORMS">.  If any field or form returns false from its C<validate()> method call, then this method returns false.  Otherwise, it returns true.
 
-If this method returns false and an L<error|Rose::HTML::Object/error> is not defined on any invalid field or form, then the L<error|Rose::HTML::Object/error> attribute of this form is set to a generic error message.  Otherwise, this form's error attribute is set to the error attribute of the last invalid field or form.
+If this method is about to return false and the L<error|Rose::HTML::Object/error> attribute of this form is not set, then it is set to a generic error message.
 
 PARAMS are name/value pairs.  Valid parameters are:
 

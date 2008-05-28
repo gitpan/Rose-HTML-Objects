@@ -7,7 +7,7 @@ use Carp();
 use Rose::HTML::Form::Field::Option::Container;
 our @ISA = qw(Rose::HTML::Form::Field::Option::Container);
 
-our $VERSION = '0.551';
+our $VERSION = '0.554';
 
 __PACKAGE__->add_required_html_attrs(
 {
@@ -25,6 +25,13 @@ __PACKAGE__->add_valid_html_attrs
 (
   'onchange',    # %Script;       #IMPLIED  -- the element value was changed --
 );
+
+*options_html_attr        = \&Rose::HTML::Form::Field::Group::items_html_attr;
+*delete_options_html_attr = \&Rose::HTML::Form::Field::Group::delete_items_html_attr;
+
+sub element       { 'select' }
+sub html_element  { 'select' }
+sub xhtml_element { 'select' }
 
 sub multiple { shift->html_attr('multiple', @_) }
 
@@ -75,6 +82,10 @@ Rose::HTML::Form::Field::SelectBox - Object representation of a select box in an
 L<Rose::HTML::Form::Field::SelectBox> is an object representation of a select box field in an HTML form.
 
 This class inherits from, and follows the conventions of, L<Rose::HTML::Form::Field>. Inherited methods that are not overridden will not be documented a second time here.  See the L<Rose::HTML::Form::Field> documentation for more information.
+
+=head1 HIERARCHY
+
+All L<child-related|Rose::HTML::Object/HIERARCHY> methods are effectively aliases for the option manipulation methods described below.  See the "hierarchy" sections of the L<Rose::HTML::Form::Field/HIERARCHY> and L<Rose::HTML::Form/HIERARCHY> documentation for an overview of the relationship between field and form objects and the child-related methods inherited from L<Rose::HTML::Object>.
 
 =head1 HTML ATTRIBUTES
 
@@ -263,6 +274,10 @@ Add multiple values to the list of selected values.
 
 This is an alias for the L<options|/options> method.
 
+=item B<delete_items_html_attr NAME>
+
+This is an alias for the L<delete_options_html_attr|/delete_options_html_attr> method.
+
 =item B<delete_option VALUE>
 
 Deletes the first option (according to the order that they are returned from L<options()|/options>) whose "value" HTML attribute is VALUE.  Returns the deleted option or undef if no such option exists.
@@ -279,6 +294,10 @@ Deletes the first option group (according to the order that they are returned fr
 
 Repeatedly calls L<delete_option_group|/delete_option_group>, passing each value in LIST.
 
+=item B<delete_options_html_attr NAME>
+
+Delete the L<HTML attribute|Rose::HTML::Object/html_attr> named NAME from each L<option|/options>.
+
 =item B<has_value VALUE>
 
 Returns true if VALUE is selected in the select box, false otherwise.
@@ -286,6 +305,10 @@ Returns true if VALUE is selected in the select box, false otherwise.
 =item B<hide_all_options>
 
 Set L<hidden|Rose::HTML::Form::Field::Option/hidden> to true for all L<options|/options>.
+
+=item B<items_html_attr NAME [, VALUE]>
+
+This is an alias for the L<options_html_attr|/options_html_attr> method.
 
 =item B<internal_value>
 
@@ -324,6 +347,10 @@ Returns a list of the select box's L<Rose::HTML::Form::Field::Option> and/or L<R
 =item B<option_group LABEL>
 
 Returns the L<Rose::HTML::Form::Field::OptionGroup> object whose "label" HTML attribute is LABEL, or undef if no such option group exists.
+
+=item B<options_html_attr NAME [, VALUE]>
+
+If VALUE is passed, set the L<HTML attribute|Rose::HTML::Object/html_attr> named NAME on all L<options|/options>.  Otherwise, return the value of the  L<HTML attribute|Rose::HTML::Object/html_attr> named NAME on the first option encountered in the list of all L<options|/options>.
 
 =item B<show_all_options>
 

@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 283;
+use Test::More tests => 306;
 
 BEGIN 
 {
@@ -17,15 +17,182 @@ BEGIN
   use_ok('Rose::HTML::Form::Field::DateTime::Split::MDYHMS');
 }
 
-our $Have_RDBO;
+#
+# Form children
+#
 
 my $form = Rose::HTML::Form->new;
+
+$form->add_fields
+([
+  street =>
+  {
+    type => 'text',
+    size => 25,
+  },
+
+  city => 
+  {
+    type => 'text',
+    size => 25,
+  },
+]);
+
+$form->unshift_child(Rose::HTML::Object->new('p', class => 'top', children => [ 'start' ]));
+
+$form->push_child(Rose::HTML::Object->new('div', class => 'bottom', children => [ 'end' ]));
+
+is($form->xhtml_table,
+qq(<form action="" enctype="application/x-www-form-urlencoded" method="get">
+
+<p class="top">start</p>
+
+<table class="form">
+<tr class="field-odd">
+<td class="label"><label>Street</label></td>
+<td class="field"><input name="street" size="25" type="text" value="" /></td>
+</tr>
+<tr class="field-even">
+<td class="label"><label>City</label></td>
+<td class="field"><input name="city" size="25" type="text" value="" /></td>
+</tr>
+</table>
+
+<div class="bottom">end</div>
+
+</form>), 'children 1');
+
+is($form->pop_child->html, '<div class="bottom">end</div>', 'pop_child 1');
+
+is($form->xhtml_table,
+qq(<form action="" enctype="application/x-www-form-urlencoded" method="get">
+
+<p class="top">start</p>
+
+<table class="form">
+<tr class="field-odd">
+<td class="label"><label>Street</label></td>
+<td class="field"><input name="street" size="25" type="text" value="" /></td>
+</tr>
+<tr class="field-even">
+<td class="label"><label>City</label></td>
+<td class="field"><input name="city" size="25" type="text" value="" /></td>
+</tr>
+</table>
+
+</form>), 'pop_child 2');
+
+is($form->pop_child->html, '<p class="top">start</p>', 'pop_child 3');
+
+is($form->xhtml_table,
+qq(<form action="" enctype="application/x-www-form-urlencoded" method="get">
+
+<table class="form">
+<tr class="field-odd">
+<td class="label"><label>Street</label></td>
+<td class="field"><input name="street" size="25" type="text" value="" /></td>
+</tr>
+<tr class="field-even">
+<td class="label"><label>City</label></td>
+<td class="field"><input name="city" size="25" type="text" value="" /></td>
+</tr>
+</table>
+
+</form>), 'pop_child 4');
+
+$form->unshift_child(Rose::HTML::Object->new('p', class => 'top2', children => [ 'start' ]));
+
+$form->push_child(Rose::HTML::Object->new('div', class => 'bottom2', children => [ 'end' ]));
+
+is($form->shift_child->html, '<p class="top2">start</p>', 'shift_child 1');
+
+is($form->xhtml_table,
+qq(<form action="" enctype="application/x-www-form-urlencoded" method="get">
+
+<table class="form">
+<tr class="field-odd">
+<td class="label"><label>Street</label></td>
+<td class="field"><input name="street" size="25" type="text" value="" /></td>
+</tr>
+<tr class="field-even">
+<td class="label"><label>City</label></td>
+<td class="field"><input name="city" size="25" type="text" value="" /></td>
+</tr>
+</table>
+
+<div class="bottom2">end</div>
+
+</form>), 'shift_child 2');
+
+is($form->shift_child->html, '<div class="bottom2">end</div>', 'shift_child 3');
+
+is($form->xhtml_table,
+qq(<form action="" enctype="application/x-www-form-urlencoded" method="get">
+
+<table class="form">
+<tr class="field-odd">
+<td class="label"><label>Street</label></td>
+<td class="field"><input name="street" size="25" type="text" value="" /></td>
+</tr>
+<tr class="field-even">
+<td class="label"><label>City</label></td>
+<td class="field"><input name="city" size="25" type="text" value="" /></td>
+</tr>
+</table>
+
+</form>), 'shift_child 4');
+
+$form = Rose::HTML::Form->new(form_name => 'myform');
+
+$form->add_fields
+(
+  name =>
+  {
+    type => 'text',
+    size => 25,
+  },
+
+  type => 
+  {
+    type    => 'checkbox group',
+    choices => [ qw(a b c) ],
+  },
+);
+
+my $c1 = Rose::HTML::Object->new('p', class => 'top', children => [ 'start' ]);
+my $c2 = Rose::HTML::Object->new('div', class => 'bottom', children => [ 'end' ]);
+$form->unshift_child($c1);
+$form->push_child($c2);
+
+is(join(',', $form->children), join(',', $c1, $form->field('name'), $form->field('type')->checkboxes, $c2),
+   'children 2');
+
+#print join(',', $form->children);
+
+# Pre-0.554 this caused an exception
+$form->field('type')->add_checkbox(d => 'D');
+
+# Mmm, fuzzy...
+Rose::HTML::Form->default_recursive_init_fields(rand > 0.5 ? 1 : 0);
+
+our $Have_RDBO;
+
+$form = Rose::HTML::Form->new;
 ok(ref $form && $form->isa('Rose::HTML::Form'), 'new()');
+
+$form->add_fields(a => { type => 'text' });
 
 my %p = (a => 'foo', b => [ 2, 3 ]);
 
+is($form->is_empty, 1, 'is_empty 1');
+
 # Store reference
 $form->params(\%p);
+
+$form->init_fields;
+is($form->is_empty, 0, 'is_empty 2');
+
+$form->delete_field('a');
 
 is($form->param('a'), 'foo', 'params store ref 1');
 is($form->param('b')->[0], 2, 'params store ref 2');
@@ -781,6 +948,16 @@ $form->params({ n => '' });
 $form->init_fields;
 
 is($form->field_value('n'), undef, 'empty string numeric value'); # RT #30249
+
+$form->params({});
+$form->init_fields;
+
+is($form->empty_is_ok, 0, 'empty_is_ok 1');
+ok(!$form->validate, 'empty_is_ok 2');
+
+$form->empty_is_ok(1);
+
+ok($form->validate, 'empty_is_ok 3');
 
 BEGIN
 {

@@ -19,11 +19,11 @@ use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.550';
+our $VERSION = '0.554';
 
 #our $Debug = 0;
 
-use Rose::HTML::Object::MakeMethods
+use Rose::HTML::Object::MakeMethods::Localization
 (
   localized_message =>
   [
@@ -39,6 +39,7 @@ use Rose::Object::MakeMethods::Generic
   boolean => 
   [
     trim_spaces => { default => 1 },
+    empty_is_ok => { default => 0 },
   ],
 
   'scalar --get_set_init' => 
@@ -56,6 +57,8 @@ __PACKAGE__->add_valid_html_attrs(qw(
   accesskey
   tabindex
 ));
+
+sub is_button { 0 }
 
 *label_id = \&label_message_id;
 
@@ -157,19 +160,19 @@ sub parent_form
   return $self->{'parent_form'};
 }
 
-# sub parent_field
-# {
-#   my($self) = shift; 
-#   return Scalar::Util::weaken($self->{'parent_field'} = shift)  if(@_);
-#   return $self->{'parent_field'};
-# }
-# 
-# sub parent_form
-# {
-#   my($self) = shift; 
-#   return Scalar::Util::weaken($self->{'parent_form'} = shift)  if(@_);
-#   return $self->{'parent_form'};
-# }
+sub field_depth
+{
+  my($self) = shift;
+
+  my $parent = $self->parent_field || $self->parent_form;
+
+  return 0  unless($parent);
+
+  my $depth = 1;
+  $depth++ while($parent = $parent->parent_field || $parent->parent_form);
+
+  return $depth;
+}
 
 sub fq_name
 {
@@ -203,6 +206,8 @@ sub field_context_name
   my $parent_field = $self->parent_field or return;
   return $parent_field->fq_name or return;
 }
+
+sub is_flat_group { 0 }
 
 sub init_html_prefix { '' }
 sub init_html_suffix { '' }
@@ -635,6 +640,13 @@ sub xhtml_hidden_fields
 
 sub xhtml_hidden_field { shift->xhtml_hidden_fields(@_) }
 
+sub element
+{
+  my($self) = shift;
+  Carp::croak "Cannot set element for ", ref($self)  if(@_);
+  return $self->html_element;
+}
+
 sub html_tag
 {
   my($self) = shift;
@@ -718,7 +730,7 @@ sub xhtml
 sub label_object
 {
   my($self) = shift;
-  my $label = Rose::HTML::Label->new();
+  my $label = $self->{'label_object'} ||= Rose::HTML::Label->new();
 
   $label->contents($self->escape_html ? __escape_html($self->label) : 
                                         $self->label);
@@ -780,20 +792,23 @@ sub validate
      ((!ref $value && (!defined $value || ($self->trim_spaces && $value !~ /\S/))) ||
       (ref $value eq 'ARRAY' && !@$value)))
   {
-    my $label = $self->error_label;
-
-    if(defined $label)
+    unless($self->is_empty && $self->empty_is_ok)
     {
-      #$self->add_error_id(FIELD_REQUIRED, $label);
-      #$self->add_error_id(FIELD_REQUIRED, [ $label ]);
-      $self->add_error_id(FIELD_REQUIRED, { label => $label });
-    }
-    else
-    {
-      $self->add_error_id(FIELD_REQUIRED);
-    }
+      my $label = $self->error_label;
 
-    return 0;
+      if(defined $label)
+      {
+        #$self->add_error_id(FIELD_REQUIRED, $label);
+        #$self->add_error_id(FIELD_REQUIRED, [ $label ]);
+        $self->add_error_id(FIELD_REQUIRED, { label => $label });
+      }
+      else
+      {
+        $self->add_error_id(FIELD_REQUIRED);
+      }
+
+      return 0;
+    }
   }
 
   my $code = $self->validator;
@@ -1202,6 +1217,18 @@ In addition to the various kinds of field values, each field also has a name, wh
 
 Fields also have associated labels, error strings, default values, and various methods for testing, clearing, and reseting the field value.  See the list of object methods below for the details.
 
+=head1 HIERARCHY
+
+Though L<Rose::HTML::Form::Field> objects inherit from L<Rose::HTML::Object>, there are some semantic differences when it comes to the L<hierarchy|Rose::HTML::Object/HIERARCHY> of parent/child objects.  
+
+A field is an abstraction for a collection of one or more HTML tags, including the field itself, the field's L<label|/html_label>, and any L<error messages|/html_error>.  Each of these things may be made up of multiple HTML elements, and they usually exist alongside each other rather than nested within each other.  As such, the field itself cannot rightly be considered the "parent" of these elements.  This is why the child-related methods inherited from L<Rose::HTML::Object> (L<children|Rose::HTML::Object/children>, L<descendants|Rose::HTML::Object/descendants>, etc.) will usually return empty lists.  Furthermore, any children L<added|Rose::HTML::Object/add_children> to the list will generally be ignored by the field's HTML output methods.
+
+Effectively, once we move away from the L<Rose::HTML::Object>-derived classes that represent a single HTML element (with zero or more children nested within it) to a class that presents a higher-level abstraction, such as a L<form|Rose::HTML::Form> or field, the exact population of and relationship between the constituent HTML elements may be opaque.
+
+If a field is a group of sibling HTML elements with no real parent HTML element (e.g., a L<radio button group|Rose::HTML::Form::Field::RadioButtonGroup>), then the individual sibling items will be available through a dedicated method (e.g., L<radio_buttons|Rose::HTML::Form::Field::RadioButtonGroup/radio_buttons>).
+
+In cases where there really is a clear parent/child relationship among the HTML elements that make up a field, such as a L<select box|Rose::HTML::Form::Field::SelectBox> which contains zero or more L<options|Rose::HTML::Form::Field::Option> or L<option groups|Rose::HTML::Form::Field::OptionGroup>, the L<children|Rose::HTML::Object/children> method will return the expected list of objects.  In such cases, the list of child objects is usually restricted to be of the expected type (e.g., L<radio buttons|Rose::HTML::Form::Field::RadioButton> for a L<radio button group|Rose::HTML::Form::Field::RadioButtonGroup>), with all child-related methods acting as aliases for the existing item methods.  For example, the L<add_options|Rose::HTML::Form::Field::SelectBox/add_options> method in L<Rose::HTML::Form::Field::SelectBox> does the same thing as L<add_children|Rose::HTML::Object/add_children>.  See the documentation for each specific L<Rose::HTML::Form::Field>-derived class for more details.
+
 =head1 CUSTOM FIELDS
 
 This module distribution contains classes for most simple HTML fields, as well as examples of several more complex field types.  These "custom" fields do things like accept only valid email addresses or dates, coerce input and output into fixed formats, and provide rich internal representations (e.g., L<DateTime> objects).  Compound fields are made up of more than one field, and this construction can be nested: compound fields can contain other compound fields.  So long as each custom field class complies with the API outlined here, it doesn't matter how complex it is internally (or externally, in its HTML serialization).
@@ -1473,7 +1500,7 @@ Validate the field and return a true value if it is valid, false otherwise. If t
 
 If false is returned due to one of the conditions above, then L<error()|Rose::HTML::Object/error> is set to the string:
 
-    $label is a required field
+    $label is a required field.
 
 where C<$label> is either the field's L<label()|/label> or, if L<label()|/label> is not defined, the string "This".
 
@@ -1481,7 +1508,7 @@ If a custom L<validator()|/validator> is set, then C<$_> is localized and set to
 
 If the validator subroutine returns false and did not set L<error()|Rose::HTML::Object/error> to a defined value, then L<error()|Rose::HTML::Object/error> is set to the string:
 
-    $label is invalid
+    $label is invalid.
 
 where C<$label> is is either the field's L<label()|/label> or, if L<label()|/label> is not defined, the string "Value".
 

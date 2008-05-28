@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 60;
+use Test::More tests => 68;
 
 BEGIN 
 {
@@ -24,8 +24,8 @@ $field->checkboxes(apple  => 'Apple',
                    },
                    Rose::HTML::Form::Field::Checkbox->new(value => 'grape', label => 'Grape'));
 
-is(scalar @{ $field->children }, 3, 'children scalar 2');
-is(scalar(() = $field->children), 3, 'children list 2');
+is(scalar @{ $field->children }, 0, 'children scalar 2');
+is(scalar(() = $field->children), 0, 'children list 2');
 
 is(join(',', sort $field->labels), 'Apple,Grape,Orange,apple,grape,orange', 'labels()');
 
@@ -431,3 +431,39 @@ is($field->xhtml_field,
   qq(<input name="fruits" type="checkbox" value="berry" /> <label>Berry</label><br />\n) .
   qq(<input name="fruits" type="checkbox" value="cherry" /> <label>Cherry</label>),
   'delete 2');
+
+my $i = 1;
+
+foreach my $name (qw(items checkboxes))
+{
+  my $method = "${name}_html_attr";
+
+  $field->$method(class => 'bar');
+
+  is($field->xhtml_field, 
+    qq(<input class="bar" name="fruits" type="checkbox" value="apple" /> <label>Apple</label><br />\n) .
+    qq(<input class="bar" name="fruits" type="checkbox" value="orange" /> <label>Le Orange</label><br />\n) .
+    qq(<input class="bar" name="fruits" type="checkbox" value="berry" /> <label>Berry</label><br />\n) .
+    qq(<input class="bar" name="fruits" type="checkbox" value="cherry" /> <label>Cherry</label>),
+    "$method " . $i++);
+
+  is($field->$method('class'), 'bar', "$method " . $i++);
+
+  $method = "delete_${name}_html_attr";
+
+  $field->$method('class');
+
+  is($field->xhtml_field, 
+    qq(<input name="fruits" type="checkbox" value="apple" /> <label>Apple</label><br />\n) .
+    qq(<input name="fruits" type="checkbox" value="orange" /> <label>Le Orange</label><br />\n) .
+    qq(<input name="fruits" type="checkbox" value="berry" /> <label>Berry</label><br />\n) .
+    qq(<input name="fruits" type="checkbox" value="cherry" /> <label>Cherry</label>),
+    "$method " . $i++);    
+}
+
+$field->input_value('apple');
+
+is($field->is_empty, 0, 'is_empty 3');
+
+$field->input_value('');
+is($field->is_empty, 1, 'is_empty 4');
