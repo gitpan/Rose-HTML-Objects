@@ -2,8 +2,9 @@ package Rose::HTML::Objects;
 
 use strict;
 
-# The sole purpose of this module is to provide a version number
-our $VERSION = '0.554';
+use Carp;
+
+our $VERSION = '0.555';
 
 1;
 

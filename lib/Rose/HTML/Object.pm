@@ -26,7 +26,7 @@ use Rose::Class::MakeMethods::Generic
   ],
 );
 
-__PACKAGE__->localizer(Rose::HTML::Object::Message::Localizer->new);
+__PACKAGE__->default_localizer(Rose::HTML::Object::Message::Localizer->new);
 
 __PACKAGE__->autoload_html_attr_methods(1);
 
@@ -53,6 +53,13 @@ __PACKAGE__->add_valid_html_attrs
 
 __PACKAGE__->object_type_classes
 (
+  'anchor'             => 'Rose::HTML::Anchor',
+  'image'              => 'Rose::HTML::Image',
+  'label'              => 'Rose::HTML::Label',
+  'link'               => 'Rose::HTML::Link',
+  'script'             => 'Rose::HTML::Script',
+  'literal text'       => 'Rose::HTML::Text',
+
   'form'               => 'Rose::HTML::Form',
   'repeatable form'    => 'Rose::HTML::Form::Repeatable',
 
@@ -346,6 +353,29 @@ sub has_child
   }
 
   return 0;
+}
+
+my %Loaded; # Lame, but trying to be fast here
+
+sub object_type_class_loaded
+{
+  my($class) = shift;
+
+  my $type_class = $class->object_type_class(@_);
+
+  unless($Loaded{$type_class})
+  {
+    no strict 'refs';
+    unless(@{$type_class . '::ISA'})
+    {
+      eval "use $type_class";
+      Carp::croak "Could not load class '$type_class' - $@"  if($@);
+    }
+
+    $Loaded{$type_class}++;
+  }
+  
+  return $type_class;
 }
 
 sub init_html_error_formatter  { }
@@ -814,6 +844,27 @@ sub create_html_attr_methods
   return $count;
 }
 
+sub import
+{
+  my($class) = shift;
+  
+  foreach my $arg (@_)
+  {
+    if($arg eq ':customize')
+    {
+      $class->import_methods(
+        { target_class => (caller)[0] },
+        qw(object_type_class_exists object_type_class_keys 
+           delete_object_type_class object_type_classes 
+           clear_object_type_classes object_type_class 
+           inherit_object_type_classs object_type_classes_cache 
+           inherit_object_type_class add_object_type_classs 
+           delete_object_type_classes add_object_type_class
+           localizer locale default_localizer default_locale));
+    }
+  }
+}
+
 # XXX: This is undocumented for now...
 #
 # =item B<import_methods NAME1 [, NAME2, ...]>
@@ -852,7 +903,9 @@ sub import_methods
 {
   my($this_class) = shift;
 
-  my $target_class = (caller)[0];
+  my $options = ref $_[0] && ref $_[0] eq 'HASH' ? shift : {};
+
+  my $target_class = $options->{'target_class'} || (caller)[0];
 
   my(@search_classes, @parents);
 
