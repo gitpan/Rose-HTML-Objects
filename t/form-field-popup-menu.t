@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 67;
+use Test::More tests => 72;
 
 BEGIN 
 {
@@ -82,7 +82,8 @@ is($field->html_field,
 $field->value('orange');
 
 is(($field->input_value)[0], 'orange', 'input_value()');
-is(($field->internal_value)[0], 'orange', 'internal_value()');
+is(($field->internal_value)[0], 'orange', 'internal_value() 1');
+is($field->internal_value, 'orange', 'internal_value() 2');
 is(($field->output_value)[0], 'orange', 'output_value()');
 
 is($field->html_field, 
@@ -251,6 +252,25 @@ is($field->html_field,
   qq(<option value="cherry">Cherry</option>\n) .
   qq(</select>),
   'localized label 4');
+
+$field->localizer->locale('en');
+$field->locale('xx');
+
+is($field->option('orange')->label->as_string, 'Le Orange', 'localized label 3.1');
+is($field->html_field, 
+  qq(<select name="fruits" size="1">\n) .
+  qq(<option selected value="apple">Apple</option>\n) .
+  qq(<option value="orange">Le Orange</option>\n) .
+  qq(<option value="grape">Grape</option>\n) .
+  qq(<option value="pear">Pear</option>\n) .
+  qq(<option value="berry">Berry</option>\n) .
+  qq(<option value="squash">Squash</option>\n) .
+  qq(<option value="cherry">Cherry</option>\n) .
+  qq(</select>),
+  'localized label 4.1');
+
+$field->localizer->locale('xx');
+$field->locale(undef);
 
 $field->labels({ cherry => 'CHERRY', squash => 'SQUASH' });
 
@@ -503,4 +523,12 @@ is($field->is_empty, 0, 'is_empty 3');
 
 $field->input_value('');
 
+$field->clear;
+
 is($field->is_empty, 1, 'is_empty 4');
+
+is(scalar $field->internal_value, undef, 'undef internal value');
+
+$field->input_value('orange');
+
+is(scalar $field->internal_value, 'orange', 'orange internal value');

@@ -12,6 +12,13 @@ __PACKAGE__->delete_valid_html_attr('multiple');
 
 sub multiple { 0 }
 
+sub internal_value
+{
+  my($self) = shift;
+  my($value) =  $self->SUPER::internal_value(@_);
+  return $value;
+}
+
 1;
 
 __END__
@@ -267,6 +274,12 @@ Get or set the labels for all values.  If LABELS is a reference to a hash or a l
 
 Returns a hash of value/label pairs in list context, or a reference to a hash in scalar context.
 
+=item B<label_ids [LABELS]>
+
+Get or set the integer L<message|Rose::HTML::Object::Messages> ids for all values.  If LABELS is a reference to a hash or a list of value/message id pairs, then LABELS replaces all existing label ids.  
+
+Returns a hash of value/label pairs in list context, or a reference to a hash of value/label pairs in scalar context.
+
 =item B<option VALUE>
 
 Returns the first option (according to the order that they are returned from L<options()|/options>) whose "value" HTML attribute is VALUE, or undef if no such option exists.
@@ -315,6 +328,6 @@ With arguments, it will get or set the label for the option whose value is VALUE
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

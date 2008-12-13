@@ -2400,6 +2400,19 @@ Examples:
                       nick  => { type => 'text', size => 15 },
                       age   => 'text');
 
+=item B<add_field_type_classes [MAP]>
+
+Add entries to the L<field_type_classes|/field_type_classes> hash that maps field type strings to the names of the L<Rose::HTML::Form::Field>-derived classes.  Example:
+
+    My::HTML::Form->add_field_type_classes
+    (
+      nick => 'My::HTML::Form::Field::Nickname',
+      age  => 'My::HTML::Form::Field::Age',
+      ...
+    );
+
+This method is an alias for the L<add_object_type_classes|Rose::HTML::Object/add_object_type_classes> method inherited from L<Rose::HTML::Object>.  It is an L<inherited hash|Rose::Class::MakeMethods::Generic/inherited_hash> representing the union of the hashes of all superclasses, minus any keys that are explicitly L<deleted|/delete_field_type_class> in the current class.
+
 =item B<add_form ARGS>
 
 This is an alias for the L<add_forms()|/add_forms> method.
@@ -2705,105 +2718,19 @@ Get or set the value of the counter used to set the L<rank|Rose::HTML::Form::Fie
 
 =item B<field_type_class TYPE [, CLASS]>
 
-Given the field type string TYPE, return the name of the L<Rose::HTML::Form::Field>-derived class mapped to that name.  If a CLASS is passed, the field type TYPE is mapped to CLASS.  In both cases, the TYPE argument is automatically converted to lowercase.
+Given the field type string TYPE, return the name of the L<Rose::HTML::Object>-derived class mapped to that name.  If a CLASS is passed, the field type TYPE is mapped to CLASS.
+
+This method is an alias for the L<object_type_class|Rose::HTML::Object/object_type_class> method inherited from L<Rose::HTML::Object>.  It is an L<inherited hash|Rose::Class::MakeMethods::Generic/inherited_hash> representing the union of the hashes of all superclasses, minus any keys that are explicitly L<deleted|/delete_field_type_class> in the current class.
 
 =item B<field_type_classes [MAP]>
 
-Get or set the hash that maps field type strings to the names of the L<Rose::HTML::Form::Field>-derived classes.
+Get or set the hash that maps object type strings to the names of the L<Rose::HTML::Object>-derived classes.  This map
 
-This hash is class data.  If you want to modify it, I suggest making your own subclass of L<Rose::HTML::Form> and then calling this method on your derived class.
+If passed MAP (a list of type/class pairs or a reference to a hash of the same) then MAP replaces the current field type mapping.  Returns a list of type/class pairs (in list context) or a reference to a hash of type/class mappings (in scalar context).
 
-If passed MAP (a list of type/class pairs or a reference to a hash of the same) then MAP replaces the current field type mapping.  Returns a list of type/class pairs (in list context) or a reference to the hash of type/class mappings (in scalar context).
+This method is an alias for the L<object_type_classes|Rose::HTML::Object/object_type_classes> method inherited from L<Rose::HTML::Object>.  It is an L<inherited hash|Rose::Class::MakeMethods::Generic/inherited_hash> representing the union of the hashes of all superclasses, minus any keys that are explicitly L<deleted|/delete_field_type_class> in the current class.
 
-The default mapping of type names to class names is:
-
-  'text'               => Rose::HTML::Form::Field::Text
-  'scalar'             => Rose::HTML::Form::Field::Text
-  'char'               => Rose::HTML::Form::Field::Text
-  'character'          => Rose::HTML::Form::Field::Text
-  'varchar'            => Rose::HTML::Form::Field::Text
-  'string'             => Rose::HTML::Form::Field::Text
-
-  'text area'          => Rose::HTML::Form::Field::TextArea
-  'textarea'           => Rose::HTML::Form::Field::TextArea
-  'blob'               => Rose::HTML::Form::Field::TextArea
-
-  'checkbox'           => Rose::HTML::Form::Field::Checkbox
-  'check'              => Rose::HTML::Form::Field::Checkbox
-
-  'radio button'       => Rose::HTML::Form::Field::RadioButton
-  'radio'              => Rose::HTML::Form::Field::RadioButton
-
-  'checkboxes'         => Rose::HTML::Form::Field::CheckboxGroup
-  'checks'             => Rose::HTML::Form::Field::CheckboxGroup
-  'checkbox group'     => Rose::HTML::Form::Field::CheckboxGroup
-  'check group'        => Rose::HTML::Form::Field::CheckboxGroup
-
-  'radio buttons'      => Rose::HTML::Form::Field::RadioButtonGroup
-  'radios'             => Rose::HTML::Form::Field::RadioButtonGroup
-  'radio button group' => Rose::HTML::Form::Field::RadioButtonGroup
-  'radio group'        => Rose::HTML::Form::Field::RadioButtonGroup
-
-  'pop-up menu'        => Rose::HTML::Form::Field::PopUpMenu
-  'popup menu'         => Rose::HTML::Form::Field::PopUpMenu
-  'menu'               => Rose::HTML::Form::Field::PopUpMenu
-
-  'select box'         => Rose::HTML::Form::Field::SelectBox
-  'selectbox'          => Rose::HTML::Form::Field::SelectBox
-  'select'             => Rose::HTML::Form::Field::SelectBox
-
-  'submit'             => Rose::HTML::Form::Field::Submit
-  'submit button'      => Rose::HTML::Form::Field::Submit
-
-  'reset'              => Rose::HTML::Form::Field::Reset
-  'reset button'       => Rose::HTML::Form::Field::Reset
-
-  'file'               => Rose::HTML::Form::Field::File
-  'upload'             => Rose::HTML::Form::Field::File
-
-  'password'           => Rose::HTML::Form::Field::Password
-
-  'hidden'             => Rose::HTML::Form::Field::Hidden
-
-  'num'                => Rose::HTML::Form::Field::Numeric,
-  'number'             => Rose::HTML::Form::Field::Numeric,
-  'numeric'            => Rose::HTML::Form::Field::Numeric,
-
-  'int'                => Rose::HTML::Form::Field::Integer,
-  'integer'            => Rose::HTML::Form::Field::Integer,
-
-  'email'              => Rose::HTML::Form::Field::Email
-
-  'phone'              => Rose::HTML::Form::Field::PhoneNumber::US
-  'phone us'           => Rose::HTML::Form::Field::PhoneNumber::US
-
-  'phone us split' =>
-    Rose::HTML::Form::Field::PhoneNumber::US::Split
-
-  'set'  => Rose::HTML::Form::Field::Set
-
-  'time' => Rose::HTML::Form::Field::Time
-
-  'time split hms' => 
-    Rose::HTML::Form::Field::Time::Split::HourMinuteSecond
-
-  'time hours'       => Rose::HTML::Form::Field::Time::Hours
-  'time minutes'     => Rose::HTML::Form::Field::Time::Minutes
-  'time seconds'     => Rose::HTML::Form::Field::Time::Seconds
-
-  'date'             => Rose::HTML::Form::Field::Date
-  'datetime'         => Rose::HTML::Form::Field::DateTime
-
-  'datetime range'   => Rose::HTML::Form::Field::DateTime::Range
-
-  'datetime start'   => Rose::HTML::Form::Field::DateTime::StartDate
-  'datetime end'     => Rose::HTML::Form::Field::DateTime::EndDate
-
-  'datetime split mdy' => 
-    Rose::HTML::Form::Field::DateTime::Split::MonthDayYear
-
-  'datetime split mdyhms' => 
-    Rose::HTML::Form::Field::DateTime::Split::MDYHMS
+The default mapping of type names to classes is shown in the L<Rose::HTML::Object|Rose::HTML::Object/object_type_classes> documentation.
 
 =item B<field_value NAME [, VALUE]>
 
@@ -3391,7 +3318,7 @@ Returns the XHTML serialization of the fields returned by L<hidden_fields()|/hid
 
 =head1 SUPPORT
 
-Any L<Rose::HTML::Objects> questions or problems can be posted to the L<Rose::HTML::Objects> mailing list.  To subscribe to the list or view the archives, go here:
+Any L<Rose::HTML::Objects> questions or problems can be posted to the L<Rose::HTML::Objects> mailing list.  To subscribe to the list or search the archives, go here:
 
 L<http://groups.google.com/group/rose-html-objects>
 
@@ -3407,6 +3334,6 @@ L<http://rose.googlecode.com>
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

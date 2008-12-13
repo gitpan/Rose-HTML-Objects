@@ -7,13 +7,13 @@ use Rose::HTML::Object::Errors qw(:set);
 use Rose::HTML::Form::Field::TextArea;
 our @ISA = qw(Rose::HTML::Form::Field::TextArea);
 
-our $VERSION = '0.549';
+our $VERSION = '0.600';
 
 sub deflate_value
 {
   my($self, $list) = @_;
 
-  my @list = @$list; # shallow copy
+  my @list = $list ? @$list : (); # shallow copy
 
   return $self->input_value_filtered  unless(ref $list eq 'ARRAY');
 
@@ -156,6 +156,6 @@ Strings with spaces, double quotes, backslashes, or commas must be double-quoted
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

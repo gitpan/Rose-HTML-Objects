@@ -7,7 +7,7 @@ use Rose::HTML::Object::Message::Localizer;
 
 use base 'Rose::Object';
 
-our $VERSION = '0.54';
+our $VERSION = '0.600';
 
 #our $Debug = 0;
 
@@ -46,7 +46,7 @@ sub localizer
   {
     if(@_)
     {
-      return $invocant->default_localizer(shift);
+      return $invocant->default_localizer(@_);
     }
 
     return $invocant->default_localizer
@@ -65,8 +65,18 @@ sub locale
       return $invocant->{'locale'} = shift;
     }
 
-    return $invocant->{'locale'} || $invocant->localizer->locale || 
-           $invocant->localizer->default_locale;
+    return $invocant->{'locale'}  if($invocant->{'locale'});
+
+    foreach my $parent_name (qw(parent_group parent_field parent_form parent))
+    {
+      if($invocant->can($parent_name) && (my $parent = $invocant->$parent_name()))
+      {
+        my $locale = $parent->locale;
+        return $locale  if(defined $locale);
+      }
+    }
+
+    return $invocant->localizer->locale ||  $invocant->localizer->default_locale;
   }
   else # Called as a class method
   {
@@ -75,7 +85,7 @@ sub locale
       return $invocant->default_locale(shift);
     }
 
-    return $invocant->localizer->locale || $invocant->localizer->default_locale || $invocant->default_locale;
+    return $invocant->localizer->locale || $invocant->default_locale;
   }
 }
 

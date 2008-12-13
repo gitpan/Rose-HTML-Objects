@@ -318,7 +318,13 @@ If L<multiple|/multiple> is true, a reference to an array of selected values is 
 
 Get or set the labels for all values.  If LABELS is a reference to a hash or a list of value/label pairs, then LABELS replaces all existing labels.  Passing an odd number of items in the list version of LABELS causes a fatal error.
 
-Returns a hash of value/label pairs in list context, or a reference to a hash in scalar context.
+Returns a hash of value/label pairs in list context, or a reference to a hash of value/label pairs in scalar context.
+
+=item B<label_ids [LABELS]>
+
+Get or set the integer L<message|Rose::HTML::Object::Messages> ids for all values.  If LABELS is a reference to a hash or a list of value/message id pairs, then LABELS replaces all existing label ids.  
+
+Returns a hash of value/label pairs in list context, or a reference to a hash of value/label pairs in scalar context.
 
 =item B<multiple [BOOL]>
 
@@ -378,6 +384,6 @@ Returns an array (in list context) or reference to an array (in scalar context) 
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

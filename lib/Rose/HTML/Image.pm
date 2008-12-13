@@ -9,12 +9,7 @@ our @ISA = qw(Rose::HTML::Object);
 
 our $DOC_ROOT;
 
-our $VERSION = '0.011';
-
-use Rose::Object::MakeMethods::Generic
-(
-  'scalar --get_set_init' => 'document_root',
-);
+our $VERSION = '0.600';
 
 __PACKAGE__->add_required_html_attrs(
 {
@@ -46,13 +41,42 @@ sub element       { 'img' }
 sub html_element  { 'img' }
 sub xhtml_element { 'img' }
 
-sub init_document_root { ($ENV{'MOD_PERL'}) ? Apache->request->document_root : $DOC_ROOT || '' }
+QUIET:
+{
+  no warnings 'uninitialized';
+  use constant MOD_PERL_1 => ($ENV{'MOD_PERL'} && !$ENV{'MOD_PERL_API_VERSION'})     ? 1 : 0;
+  use constant MOD_PERL_2 => ($ENV{'MOD_PERL'} && $ENV{'MOD_PERL_API_VERSION'} == 2) ? 1 : 0;
+
+  use constant TRY_MOD_PERL_2 => eval { require Apache2::RequestUtil } && !$@ ? 1 : 0;
+}
+
+sub init_document_root 
+{
+  if(MOD_PERL_1)
+  {
+    return Apache->request->document_root;
+  }
+
+  if(TRY_MOD_PERL_2)
+  {
+    my $r;
+
+    eval { $r = Apache2::RequestUtil->request };
+
+    if($r)
+    {
+      return $r->document_root;
+    }
+  }
+
+  return $DOC_ROOT || '';
+}
 
 sub src
 {
   my($self) = shift;
   my $src = $self->html_attr('src', @_);
-  $self->_new_src($src)  if(@_);
+  $self->_new_src_or_document_root($src)  if(@_);
   return $src;
 }
 
@@ -64,7 +88,24 @@ sub path
   return $self->{'path'};
 }
 
-sub _new_src
+sub document_root
+{
+  my($self) = shift;
+  
+  if(@_)
+  {
+    $self->{'document_root'} = shift;
+    $self->_new_src_or_document_root($self->src);
+    return $self->{'document_root'};
+  }
+  
+  $self->{'document_root'} = $self->init_document_root
+    unless(defined  $self->{'document_root'});
+
+  return $self->{'document_root'};
+}
+
+sub _new_src_or_document_root
 {
   my($self, $src) = @_;
 
@@ -84,7 +125,7 @@ sub _new_path
 {
   my($self, $path) = @_;
 
-  unless(defined $self->{'document_root'})
+  unless($self->{'document_root'})
   {
     $self->init_size;
     return;
@@ -124,15 +165,15 @@ Rose::HTML::Image - Object representation of the "img" HTML tag.
     $img = Rose::HTML::Image->new(src => '/logo.png',
                                   alt => 'Logo');
 
-    $i->document_root('/var/web/htdocs');
+    $img->document_root('/var/web/htdocs');
 
     # <img alt="Logo" height="48" src="/logo.png" width="72">
-    print $i->html;
+    print $img->html;
 
-    $i->alt(undef);
+    $img->alt(undef);
 
     # <img alt="" height="48" src="/logo.png" width="72" />
-    print $i->xhtml;
+    print $img->xhtml;
 
     ...
 
@@ -197,11 +238,19 @@ Constructs a new L<Rose::HTML::Image> object based on PARAMS, where PARAMS are n
 
 =item B<document_root [PATH]>
 
-Get or set the web site document root.  This is combined with the value of the "src" HTML attribute to build the path to the actual image file on disk. If running in a mod_perl environment, the document root defaults to the value returned by:
+Get or set the web site document root.  This is combined with the value of the "src" HTML attribute to build the path to the actual image file on disk.
+
+If running in a mod_perl 1.x environment, the document root defaults to the value returned by:
 
     Apache->request->document_root
 
-This call is made once for each L<Rose::HTML::Image> object that needs to use the document root.
+If running in a mod_perl 2.x environment, the document root defaults to the value returned by:
+
+    Apache2::RequestUtil->request->document_root
+
+Note that you must have the C<GlobalRequest> option set for this to work.  If you do not, the document root defaults to undef.
+
+These calls are made once for each L<Rose::HTML::Image> object that needs to use the document root.
 
 =item B<init_size [PATH]>
 
@@ -229,6 +278,6 @@ The current value of the "src" HTML attribute is returned.
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

@@ -19,7 +19,7 @@ use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.554';
+our $VERSION = '0.600';
 
 #our $Debug = 0;
 
@@ -118,6 +118,26 @@ sub invalidate_value
 sub invalidate_output_value
 {
   $_[0]->{'output_value'} = undef;
+}
+
+sub parent_group
+{
+  my($self) = shift; 
+
+  if(@_)
+  {
+    if(ref $_[0])
+    {
+      Scalar::Util::weaken($self->{'parent_group'} = shift);
+      return $self->{'parent_group'};
+    }
+    else
+    {
+      return $self->{'parent_group'} = shift;
+    }
+  }
+
+  return $self->{'parent_group'};
 }
 
 sub parent_field
@@ -461,6 +481,8 @@ sub internal_value
   return $final_value;
 }
 
+sub internal_value_singular { shift->internal_value(@_) }
+
 sub output_value
 {
   my($self) = shift;
@@ -597,7 +619,7 @@ sub hidden_fields
   my($self) = shift;
 
   my $hidden_field_class = ref($self)->object_type_class_loaded('hidden');
-  
+
   no strict 'refs';
   unless(@{$hidden_field_class . '::ISA'})
   {
@@ -874,7 +896,7 @@ sub message_for_error_id
   my($self, %args) = @_;
 
   my $error_id  = $args{'error_id'};
-  my $msg_class = $args{'msg_class'};
+  my $msg_class = $args{'msg_class'} || $self->localizer->message_class;
   my $args      = $args{'args'} || [];
 
   no warnings 'uninitialized';
@@ -1326,6 +1348,22 @@ Going too far off into the realm of generic help text is not a good idea since t
 
 It may also be useful for debugging.
 
+=item B<description_id [ID [, ARGS]]>
+
+Get or set an integer L<message|Rose::HTML::Object::Messages> id for the description.
+
+Get or set an integer L<message|Rose::HTML::Object::Messages> id for the description.  When setting the message id, an optional ARGS hash reference should be passed if the L<localized text|Rose::HTML::Object::Message::Localizer/"LOCALIZED TEXT"> for the L<corresponding|/message_for_error_id> message contains any L<placeholders|Rose::HTML::Object::Message::Localizer/"LOCALIZED TEXT">.
+
+=item B<error_label [STRING]>
+
+Get or set the field label used when constructing error messages.  For example, an error message might say "Value for [label] is too large."  The error label will go in the place of the C<[label]> placeholder.
+
+If no error label is set, this method simply returns the L<label|/label>.
+
+=item B<error_label_id [ID [, ARGS]]>
+
+Get or set an integer L<message|Rose::HTML::Object::Messages> id for the error label.  When setting the message id, an optional ARGS hash reference should be passed if the L<localized text|Rose::HTML::Object::Message::Localizer/"LOCALIZED TEXT"> for the L<corresponding|/message_for_error_id> message contains any L<placeholders|Rose::HTML::Object::Message::Localizer/"LOCALIZED TEXT">.
+
 =item B<filter [CODE]>
 
 Sets both the input filter and output filter to CODE.
@@ -1434,7 +1472,11 @@ Returns true if the internal value contains any non-whitespace characters, false
 
 =item B<label [STRING]>
 
-Get or set the field label.  This label is used by the various label printing methods as well as in some default error messages.  Even if you don't plan to use any of the former, it might be a good idea to set it to a sensible value for use in the latter.
+Get or set the field label.  This label is used by the various label printing methods as well as in some error messages (assuming there is no explicitly defined L<error_label|/error_label>.  Even if you don't plan to use any of the former, it might be a good idea to set it to a sensible value for use in the latter.
+
+=item B<label_id [ID]>
+
+Get or set an integer L<message|Rose::HTML::Object::Messages> id for the field label.
 
 =item B<label_object [ARGS]>
 
@@ -1443,6 +1485,18 @@ Returns a L<Rose::HTML::Label> object with its C<for> HTML attribute set to the 
 =item B<local_name [NAME]>
 
 Get or set the name of this field from the perspective of the L<parent_form|/parent_form> or L<parent_field|/parent_field>, depending on which type of thing is the direct parent of this field.  The local name should not change, regardless of how deeply this field is nested within other forms or fields.
+
+=item B<message_for_error_id PARAMS>
+
+Return the appropriate L<message|Rose::HTML::Object::Message> object associated with the L<error|Rose::HTML::Object::Errors> id.  The error id, message class, and message placeholder values are specified by PARAMS name/value pairs.  Valid PARAMS are:
+
+=over 4
+
+=item B<msg_class CLASS>
+
+The name of the L<Rose::HTML::Object::Message>-derived class used to store each message.  If omitted, it defaults to the L<localizer|Rose::HTML::Object/localizer>'s L<message_class|Rose::HTML::Object::Message::Localizer/message_class>.
+
+=back
 
 =item B<name [NAME]>
 
@@ -1467,6 +1521,12 @@ Get or set the parent field.  The parent field should only be set if the direct 
 =item B<parent_form [FORM]>
 
 Get or set the parent L<form|Rose::HTML::Form>.  The parent form should only be set if the direct parent of this field is a form.  The reference to the parent form is "weakened" using L<Scalar::Util::weaken()|Scalar::Util/weaken> in order to avoid memory leaks caused by circular references.
+
+=item B<parent_group [GROUP]>
+
+Get or set the parent group.  Group objects are things like L<Rose::HTML::Form::Field::RadioButtonGroup> and L<Rose::HTML::Form::Field::CheckboxGroup>: conceptual groupings that have no concrete incarnation in HTML.  (That is, there is no parent HTML tag wrapping checkbox or radio button groups.)
+
+The parent group should only be set if the direct parent of this field is a group object.  The reference to the parent group is "weakened" using L<Scalar::Util::weaken()|Scalar::Util/weaken> in order to avoid memory leaks caused by circular references.
 
 =item B<prepare>
 
@@ -1580,7 +1640,7 @@ This method is part of the L<Rose::HTML::Object> API.  In this case, it simply c
 
 =head1 SUPPORT
 
-Any L<Rose::HTML::Objects> questions or problems can be posted to the L<Rose::HTML::Objects> mailing list.  To subscribe to the list or view the archives, go here:
+Any L<Rose::HTML::Objects> questions or problems can be posted to the L<Rose::HTML::Objects> mailing list.  To subscribe to the list or search the archives, go here:
 
 L<http://groups.google.com/group/rose-html-objects>
 
@@ -1596,6 +1656,6 @@ L<http://rose.googlecode.com>
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

@@ -1,9 +1,9 @@
 --- #YAML:1.0
 name:               Rose-HTML-Objects
-version:            0.555
+version:            0.600
 abstract:           ~
 author:  []
-license:            unknown
+license:            perl
 distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
@@ -13,18 +13,29 @@ requires:
     DateTime:        0.20
     Email::Valid:    0
     Encode:          0
+    File::Basename:  0
+    File::Path:      0
+    File::Spec:      0
     HTML::Entities:  0
     Image::Size:     0
+    IO::String:      1.08
+    perl:            5.006000
     Rose::DateTime:  0.532
-    Rose::Object:    0.85
+    Rose::Object:    0.854
     Rose::URI:       0.021
     Scalar::Util:    0
     URI::Escape:     0
+resources:
+    bugtracker:   http://rt.cpan.org/NoAuth/Bugs.html?Dist=Rose-HTML-Objects
+    homepage:     http://rose.googlecode.com/
+    license:      http://dev.perl.org/licenses/
+    MailingList:  http://groups.google.com/group/rose-html-objects
+    repository:   http://rose.googlecode.com/svn/trunk/modules/Rose-HTML-Objects
 no_index:
     directory:
         - t
         - inc
-generated_by:       ExtUtils::MakeMaker version 6.47_02
+generated_by:       ExtUtils::MakeMaker version 6.48
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4

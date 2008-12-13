@@ -740,7 +740,7 @@ See the source code for  L<Rose::HTML::Form::Field::DateTime::Range>'s L<inflate
 
 =head1 SUPPORT
 
-Any L<Rose::HTML::Objects> questions or problems can be posted to the L<Rose::HTML::Objects> mailing list.  To subscribe to the list or view the archives, go here:
+Any L<Rose::HTML::Objects> questions or problems can be posted to the L<Rose::HTML::Objects> mailing list.  To subscribe to the list or search the archives, go here:
 
 L<http://groups.google.com/group/rose-html-objects>
 
@@ -756,6 +756,6 @@ L<http://rose.googlecode.com>
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

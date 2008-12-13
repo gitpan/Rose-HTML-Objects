@@ -53,7 +53,7 @@ sub error_id
   {
     my $error_id = shift;
     my $new_error_id = $Error_Map{$error_id} || $error_id;
-    return $self->SUPER::error_id($new_error_id);
+    return $self->SUPER::error_id($new_error_id, @_);
   }
   else
   {
@@ -164,6 +164,6 @@ If BOOL is true or omitted, sets L<min|/min> to C<0>.  If BOOL is false, sets L<
 
 John C. Siracusa (siracusa@gmail.com)
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
 Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
