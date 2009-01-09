@@ -6,7 +6,7 @@ use base 'Rose::HTML::Object';
 
 use Rose::HTML::Util();
 
-our $VERSION = '0.554';
+our $VERSION = '0.601';
 
 __PACKAGE__->valid_html_attrs([]);
 
@@ -42,8 +42,8 @@ sub init
 sub text
 {
   my($self) = shift;
+  local $^W = 0; # XXX: Using a sledgehammer here due to possible stringification overloading on $_[0]
   $self->html(defined $_[0] ? Rose::HTML::Util::escape_html(@_) : undef)  if(@_);
-  no warnings 'uninitialized';
   return Rose::HTML::Util::unescape_html($self->html);
 }
 
@@ -120,4 +120,4 @@ John C. Siracusa (siracusa@gmail.com)
 
 =head1 LICENSE
 
-Copyright (c) 2008 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2009 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
