@@ -10,8 +10,7 @@ use Rose::HTML::Object::Messages
 use Rose::HTML::Form::Field::DateTime::StartDate;
 use Rose::HTML::Form::Field::DateTime::EndDate;
 
-use Rose::HTML::Form::Field::Compound;
-our @ISA = qw(Rose::HTML::Form::Field::Compound);
+use base 'Rose::HTML::Form::Field::Compound';
 
 use Rose::Object::MakeMethods::Generic
 (
@@ -24,7 +23,7 @@ use Rose::Object::MakeMethods::Generic
   ]
 );
 
-our $VERSION = '0.549';
+our $VERSION = '0.606';
 
 sub build_field
 {
@@ -252,6 +251,8 @@ if(__PACKAGE__->localizer->auto_load_messages)
 {
   __PACKAGE__->localizer->load_all_messages;
 }
+
+use utf8; # The __DATA__ section contains UTF-8 text
 
 1;
 

@@ -7,13 +7,11 @@ use Carp();
 use Rose::HTML::Object::Errors qw(:field);
 use Rose::HTML::Object::Messages qw(:field);
 
-use Rose::HTML::Form::Field;
-use Rose::HTML::Form::Field::Collection;
-our @ISA = qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
+use base qw(Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.604';
+our $VERSION = '0.606';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -344,6 +342,8 @@ if(__PACKAGE__->localizer->auto_load_messages)
   __PACKAGE__->localizer->load_all_messages;
 }
 
+use utf8; # The __DATA__ section contains UTF-8 text
+
 1;
 
 __DATA__
@@ -378,11 +378,8 @@ Rose::HTML::Form::Field::Compound - Base class for field objects that contain ot
 
     package MyFullNameField;
 
-    use Rose::HTML::Form::Field::Text;    
-    use Rose::HTML::Form::Field::Compound;
-
-    our @ISA = qw(Rose::HTML::Form::Field::Compound
-                  Rose::HTML::Form::Field::Text);
+    use base qw(Rose::HTML::Form::Field::Compound
+                Rose::HTML::Form::Field::Text);
 
     sub build_field
     {

@@ -11,15 +11,14 @@ use Rose::HTML::Label;
 use Rose::HTML::Object::Errors qw(:field);
 use Rose::HTML::Object::Messages qw(:field);
 
-use Rose::HTML::Object;
-our @ISA = qw(Rose::HTML::Object);
+use base 'Rose::HTML::Object';
 
 use constant HTML_ERROR_SEP  => "<br>\n";
 use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.605';
+our $VERSION = '0.606';
 
 #our $Debug = 0;
 
@@ -1097,6 +1096,8 @@ if(__PACKAGE__->localizer->auto_load_messages)
   __PACKAGE__->localizer->load_all_messages;
 }
 
+use utf8; # The __DATA__ section contains UTF-8 text
+
 1;
 
 __DATA__
@@ -1150,8 +1151,7 @@ Rose::HTML::Form::Field - HTML form field base class.
 
     package MyField;
 
-    use Rose::HTML::Form::Field;
-    our @ISA = qw(Rose::HTML::Form::Field);
+    use base 'Rose::HTML::Form::Field';
     ...
 
     my $f = MyField->new(name => 'test', label => 'Test');

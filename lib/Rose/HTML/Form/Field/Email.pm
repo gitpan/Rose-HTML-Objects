@@ -6,10 +6,9 @@ use Email::Valid;
 
 use Rose::HTML::Object::Errors qw(:email);
 
-use Rose::HTML::Form::Field::Text;
-our @ISA = qw(Rose::HTML::Form::Field::Text);
+use base 'Rose::HTML::Form::Field::Text';
 
-our $VERSION = '0.549';
+our $VERSION = '0.606';
 
 sub validate
 {
@@ -36,6 +35,8 @@ if(__PACKAGE__->localizer->auto_load_messages)
 {
   __PACKAGE__->localizer->load_all_messages;
 }
+
+use utf8; # The __DATA__ section contains UTF-8 text
 
 1;
 

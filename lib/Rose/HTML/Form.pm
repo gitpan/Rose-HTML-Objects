@@ -12,15 +12,12 @@ use URI::Escape qw(uri_escape);
 use Rose::HTML::Util();
 use Rose::HTML::Object::Errors qw(:form);
 
-use Rose::HTML::Form::Field;
-use Rose::HTML::Form::Field::Collection;
-use Rose::HTML::Object::WithWrapAroundChildren;
-our @ISA = qw(Rose::HTML::Object::WithWrapAroundChildren
-              Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
+use base qw(Rose::HTML::Object::WithWrapAroundChildren
+            Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
 require Rose::HTML::Form::Repeatable;
 
-our $VERSION = '0.602';
+our $VERSION = '0.606';
 
 # Multiple inheritence never quite works out the way I want it to...
 Rose::HTML::Form::Field::Collection->import_methods
@@ -1981,6 +1978,8 @@ if(__PACKAGE__->localizer->auto_load_messages)
   __PACKAGE__->localizer->load_all_messages;
 }
 
+use utf8; # The __DATA__ section contains UTF-8 text
+
 1;
 
 __DATA__
@@ -2011,8 +2010,7 @@ Rose::HTML::Form - HTML form base class.
 
   package PersonForm;
 
-  use Rose::HTML::Form;
-  our @ISA = qw(Rose::HTML::Form);
+  use base 'Rose::HTML::Form';
 
   use Person;
 
