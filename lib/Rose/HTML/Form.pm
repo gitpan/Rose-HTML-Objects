@@ -15,8 +15,6 @@ use Rose::HTML::Object::Errors qw(:form);
 use base qw(Rose::HTML::Object::WithWrapAroundChildren
             Rose::HTML::Form::Field Rose::HTML::Form::Field::Collection);
 
-require Rose::HTML::Form::Repeatable;
-
 our $VERSION = '0.606';
 
 # Multiple inheritence never quite works out the way I want it to...
@@ -44,6 +42,7 @@ __PACKAGE__->add_valid_html_attrs
   'onreset',        # %Script;       #IMPLIED  -- the form was reset --
   'accept-charset', # %Charsets;     #IMPLIED  -- list of supported charsets --
   'target',         # http://www.w3.org/TR/xhtml-modularization/abstract_modules.html#s_targetmodule
+  'novalidate',
 );
 
 __PACKAGE__->add_required_html_attrs(
@@ -3336,4 +3335,4 @@ John C. Siracusa (siracusa@gmail.com)
 
 =head1 LICENSE
 
-Copyright (c) 2009 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2010 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.

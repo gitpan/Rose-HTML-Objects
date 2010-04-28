@@ -18,7 +18,7 @@ use constant XHTML_ERROR_SEP => "<br />\n";
 
 use Rose::HTML::Form::Constants qw(FF_SEPARATOR);
 
-our $VERSION = '0.606';
+our $VERSION = '0.607';
 
 #our $Debug = 0;
 
@@ -55,6 +55,7 @@ __PACKAGE__->add_valid_html_attrs(qw(
   onfocus
   accesskey
   tabindex
+  autofocus
 ));
 
 sub is_button { 0 }
@@ -1675,4 +1676,4 @@ John C. Siracusa (siracusa@gmail.com)
 
 =head1 LICENSE
 
-Copyright (c) 2009 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2010 by John C. Siracusa.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
