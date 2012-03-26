@@ -134,4 +134,5 @@ t/pod.t
 t/private-library.t
 t/script.t
 t/text.t
-META.yml                                 Module meta-data (added by MakeMaker)
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
