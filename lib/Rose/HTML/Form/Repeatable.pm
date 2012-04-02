@@ -6,7 +6,7 @@ use Rose::HTML::Form;
 
 use base 'Rose::HTML::Object::Repeatable';
 
-our $VERSION = '0.613';
+our $VERSION = '0.614';
 
 __PACKAGE__->default_form_class('Rose::HTML::Form');
 
@@ -98,7 +98,7 @@ sub make_form
 
   $form->rank($num);
 
-  $self->form_rank_counter($num + 1)  if($num > $self->form_rank_counter);
+  $self->form_rank_counter($num + 1)  if($num >= $self->form_rank_counter);
 
   $self->add_form($num => $form);
 
@@ -108,7 +108,8 @@ sub make_form
 sub make_next_form
 {
   my ($self) = shift;
-  return $self->make_form($self->increment_form_rank_counter);
+  $self->increment_form_rank_counter; # XXX: Remove when form_rank_counter is removed
+  return $self->make_form($self->next_form_rank);
 }
 
 sub objects_from_form
