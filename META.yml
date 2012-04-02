@@ -41,4 +41,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: http://rose.googlecode.com/svn/trunk/modules/Rose-HTML-Objects
   x_MailingList: http://groups.google.com/group/rose-html-objects
-version: 0.612
+version: 0.613
