@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 227;
+use Test::More tests => 241;
 
 BEGIN { use_ok('Rose::HTML::Object') }
 
@@ -101,10 +101,52 @@ $o->html_attr_hook('name' => sub
 
 $o->html_attr('name' => 'hello');
 
+$o->add_class('foo');
+is($o->html_attr('class'), 'foo', 'add_class() 1');
+
+$o->add_class('foo');
+is($o->html_attr('class'), 'foo', 'add_class() 2');
+
+$o->add_class('bar');
+is($o->html_attr('class'), 'foo bar', 'add_class() 3');
+
+$o->add_classes('foo', 'bar', 'baz');
+is($o->html_attr('class'), 'foo bar baz', 'add_class() 4');
+
+$o->add_classes([ 'foo', 'blee', 'baz' ]);
+is($o->html_attr('class'), 'foo bar baz blee', 'add_class() 5');
+
+$o->delete_class('bar');
+is($o->html_attr('class'), 'foo baz blee', 'delete_class() 1');
+
+$o->delete_class('foo');
+is($o->html_attr('class'), 'baz blee', 'delete_class() 2');
+
+$o->delete_class('blee');
+is($o->html_attr('class'), 'baz', 'delete_class() 3');
+
+$o->class('  foo  bar baz blee   baz bar   ');
+
+$o->delete_class('bar');
+is($o->html_attr('class'), 'foo baz blee baz', 'delete_class() 4');
+
+$o->delete_classes(qw(foo baz goo));
+is($o->html_attr('class'), 'blee', 'delete_class() 5');
+
+$o->class('foo bar  baz  baz bar');
+$o->delete_classes([ qw(blee baz goo foo) ]);
+is($o->html_attr('class'), 'bar bar', 'delete_class() 6');
+
+$o->delete_classes([ qw(bar) ]);
+is($o->html_attr('class'), '', 'delete_class() 7');
+
+$o->delete_html_attr('class');
+
 is($o->html_attr('name'), 'Hello', 'html_attr_hook() 1');
 is($o->html_attr('ucname'), 'HELLO', 'html_attr_hook() 2');
 
 is($o->html_attr_is_valid('foo'), 0, 'html_attr_is_valid() 1');
+is($o->html_attr_is_valid('data-foo'), 1, 'html_attr_is_valid() 1.1');
 
 is($o->validate_html_attrs(1), 1, 'validate_html_attrs(1)');
 eval { $o->html_attr('foo') };
@@ -151,6 +193,10 @@ $o->html_attr(color => 'red');
 is($o->delete_html_attrs('name', 'age'), 2, 'delete_html_attrs() 1');
 
 is($o->html_attrs_string, ' bar="baz" color="red" ucname="HELLO"', 'delete_html_attrs() 2');
+
+$o->html_attr('data-bar' => 'goo');
+is($o->html_attrs_string, ' bar="baz" color="red" data-bar="goo" ucname="HELLO"', 'data attributes 1');
+$o->delete_html_attr('data-bar');
 
 $o->clear_html_attr('bar');
 my $names_str = join(' ', $o->html_attr_names);

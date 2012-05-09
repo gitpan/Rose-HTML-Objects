@@ -11,7 +11,7 @@ use List::MoreUtils qw(uniq);
 use Rose::HTML::Util();
 use Rose::HTML::Object::Message::Localizer;
 
-our $VERSION = '0.615';
+our $VERSION = '0.616';
 
 our $Debug = undef;
 
@@ -201,7 +201,7 @@ use Rose::Class::MakeMethods::Set
   [
     valid_html_attr =>
     {
-      test_method     => 'html_attr_is_valid', 
+      test_method     => '_html_attr_is_valid', 
       delete_implies  => [ 'delete_boolean_html_attr', 'delete_required_html_attr' ],
       inherit_implies => 'inherit_boolean_html_attr',
     },
@@ -508,6 +508,12 @@ sub html_attr
   croak 'Missing attribute name';
 }
 
+sub html_attr_is_valid
+{
+  my ($self, $attr) = @_;
+  return 1  if($attr =~ /^data-\w/);
+  return $self->_html_attr_is_valid($attr);
+}
 
 sub html_attr_names 
 {
@@ -763,6 +769,61 @@ sub xhtml_tag
   }
 
   return '<' . $self->xhtml_element . $self->xhtml_attrs_string . ' />';
+}
+
+sub add_class
+{
+  my ($self, $new_class) = @_;
+
+  my $class = $self->html_attr('class');
+
+  no warnings 'uninitialized';
+  unless($class =~ /(?:^| )$new_class(?: |$)/)
+  {
+    $self->html_attr(class => $class ? "$class $new_class" : $new_class);
+  }
+}
+
+sub add_classes
+{
+  my ($self) = shift;
+
+  no warnings 'uninitialized';
+  foreach my $class ((ref $_[0] eq ref []) ? @{$_[0]} : @_)
+  {
+    $self->add_class($class);
+  }
+}
+
+sub delete_class
+{
+  my ($self, $delete_class) = @_;
+
+  my $class = $self->html_attr('class');
+
+  no warnings 'uninitialized';
+  if($class =~ s/(^| |\G)\Q$delete_class\E( |$)/$1$2/g)
+  {
+    for($class)
+    {
+      s/^ +//;
+      s/ +$//;
+      s/  +/ /g;
+    }
+
+    $self->html_attr(class => $class);
+  }
+}
+
+sub delete_classes
+{
+  my ($self) = shift;
+
+  no warnings 'uninitialized';
+  foreach my $class ((ref $_[0] eq ref []) ? @{$_[0]} : @_)
+  {
+    $self->delete_class($class);
+  }
 }
 
 #
