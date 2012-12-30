@@ -35,6 +35,7 @@ requires:
   Rose::URI: 0.021
   Scalar::Util: 0
   URI::Escape: 0
+  base: 2.18
   perl: 5.006000
 resources:
   bugtracker: http://rt.cpan.org/NoAuth/Bugs.html?Dist=Rose-HTML-Objects
@@ -42,4 +43,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: http://rose.googlecode.com/svn/trunk/modules/Rose-HTML-Objects
   x_MailingList: http://groups.google.com/group/rose-html-objects
-version: 0.616
+version: 0.617

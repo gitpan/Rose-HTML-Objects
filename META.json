@@ -49,6 +49,7 @@
             "Rose::URI" : "0.021",
             "Scalar::Util" : "0",
             "URI::Escape" : "0",
+            "base" : "2.18",
             "perl" : "5.006000"
          }
       }
@@ -67,5 +68,5 @@
       },
       "x_MailingList" : "http://groups.google.com/group/rose-html-objects"
    },
-   "version" : "0.616"
+   "version" : "0.617"
 }
